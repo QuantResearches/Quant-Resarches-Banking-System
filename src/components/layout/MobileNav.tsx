@@ -62,11 +62,11 @@ export default function MobileNav() {
                                                 href={link.href}
                                                 onClick={() => setIsOpen(false)}
                                                 className={clsx(
-                                                    "flex items-center gap-3 px-4 py-3 text-sm font-medium rounded transition-colors",
-                                                    isActive ? "bg-blue-900 text-white" : "text-slate-300 hover:bg-slate-800"
+                                                    "flex items-center gap-3 px-3 py-3 text-sm font-medium rounded-lg transition-colors group",
+                                                    isActive ? "bg-blue-600 text-white shadow-md shadow-blue-900/20" : "text-slate-300 hover:bg-slate-800 hover:text-white"
                                                 )}
                                             >
-                                                <Icon className="w-5 h-5" />
+                                                <Icon className={clsx("w-5 h-5", isActive ? "text-white" : "text-slate-500 group-hover:text-white")} />
                                                 {link.name}
                                             </Link>
                                         </li>
@@ -75,7 +75,7 @@ export default function MobileNav() {
                                 <li className="pt-4 mt-4 border-t border-slate-800">
                                     <button
                                         onClick={() => setIsLogoutModalOpen(true)}
-                                        className="flex w-full items-center gap-3 px-4 py-3 text-sm font-medium text-red-400 hover:bg-slate-800 rounded"
+                                        className="flex w-full items-center gap-3 px-3 py-3 text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg"
                                     >
                                         <LogOut className="w-5 h-5" />
                                         Sign Out
@@ -83,6 +83,7 @@ export default function MobileNav() {
                                 </li>
                             </ul>
                         </nav>
+
                     </div>
                 )}
             </div>

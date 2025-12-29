@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { encrypt } from "@/lib/crypto";
 
 export const dynamic = 'force-dynamic';
 
@@ -19,5 +20,85 @@ export async function GET(req: Request) {
         return NextResponse.json(customers);
     } catch (error) {
         return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    }
+}
+
+export async function POST(req: Request) {
+    const session = await getServerSession(authOptions);
+    if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    try {
+        const body = await req.json();
+
+        // Basic Validation
+        if (!body.full_name || !body.email || !body.phone || !body.address || !body.dob || !body.pan || !body.aadhaar_last4) {
+            return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+        }
+
+        const {
+            full_name, email, phone, address,
+            dob, gender, marital_status, father_name,
+            city, state, pincode, nationality,
+            pan, aadhaar_last4,
+            risk_category, pep_flag
+        } = body;
+
+        // Transactional Creation
+        const result = await prisma.$transaction(async (tx) => {
+            // 1. Create Customer Core Record
+            const customer = await tx.customer.create({
+                data: {
+                    full_name,
+                    email,
+                    phone,
+                    address, // This is current address summary
+                    created_by: session.user.id
+                }
+            });
+
+            // 2. Encrypt Sensitive Data
+            const panEncrypted = encrypt(pan);
+
+            // 3. Create Detailed Profile
+            await tx.customerProfile.create({
+                data: {
+                    customer_id: customer.id,
+                    dob: new Date(dob),
+                    gender,
+                    marital_status,
+                    father_name,
+                    country: nationality || "INDIAN",
+                    current_address: address,
+                    permanent_address: address, // Default to same if not separated in UI yet, or add separate field
+                    city,
+                    state,
+                    pincode,
+                    pan_encrypted: panEncrypted,
+                    kyc_status: "PENDING_VERIFICATION"
+                }
+            });
+
+            // 4. Create Risk Profile
+            await tx.kYCRiskProfile.create({
+                data: {
+                    profile_id: (await tx.customerProfile.findUnique({ where: { customer_id: customer.id } }))!.id,
+                    risk_rating: risk_category, // LOW, MEDIUM, HIGH
+                    pep_status: pep_flag === "on" || pep_flag === true,
+                    last_review_date: new Date(),
+                    next_review_date: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000) // 90 days review
+                }
+            });
+
+            return customer;
+        });
+
+        return NextResponse.json(result);
+
+    } catch (error: any) {
+        console.error("Create Customer Error:", error);
+        if (error.code === 'P2002') {
+            return NextResponse.json({ error: "Customer with this email already exists" }, { status: 409 });
+        }
+        return NextResponse.json({ error: "Failed to create customer record" }, { status: 500 });
     }
 }

@@ -4,6 +4,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { Plus } from "lucide-react";
 import CopyableText from "@/components/ui/CopyableText";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/Table";
+import { Card } from "@/components/ui/Card";
 
 export const dynamic = 'force-dynamic';
 
@@ -36,55 +38,57 @@ export default async function TransactionsPage() {
                 )}
             </div>
 
-            <div className="bg-white border border-gray-200 overflow-x-auto">
-                <table className="w-full text-sm text-left">
-                    <thead className="bg-gray-50 text-gray-700 font-medium uppercase border-b border-gray-200">
-                        <tr>
-                            <th className="px-6 py-4">Date</th>
-                            <th className="px-6 py-4">Account</th>
-                            <th className="px-6 py-4">Type</th>
-                            <th className="px-6 py-4">Amount</th>
-                            <th className="px-6 py-4">Reference</th>
-                            <th className="px-6 py-4">Creator</th>
-                            <th className="px-6 py-4">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-200 text-gray-600">
-                        {transactions.map((txn) => (
-                            <tr key={txn.id} className="hover:bg-gray-50">
-                                <td className="px-6 py-4">{txn.created_at.toLocaleString()}</td>
-                                <td className="px-6 py-4">
-                                    <div className="font-medium text-gray-900">{txn.account.customer.full_name}</div>
-                                    <CopyableText text={txn.account.id} truncateLength={8} className="text-gray-500" />
-                                </td>
-                                <td className="px-6 py-4">
-                                    <span className={`inline-flex px-2 py-0.5 text-xs font-semibold rounded-none ${txn.txn_type === "credit" ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
-                                        {txn.txn_type}
-                                    </span>
-                                </td>
-                                <td className={`px-6 py-4 font-mono font-medium ${txn.txn_type === "credit" ? "text-green-600" : "text-red-600"}`}>
-                                    {txn.txn_type === "credit" ? "+" : "-"}
-                                    {Number(txn.amount).toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}
-                                </td>
-                                <td className="px-6 py-4">{txn.reference || "-"}</td>
-                                <td className="px-6 py-4 text-xs text-gray-500">{txn.creator.email}</td>
-                                <td className="px-6 py-4">
-                                    <Link href={`/transactions/${txn.id}`} className="text-blue-600 hover:underline font-medium text-xs">
-                                        View
-                                    </Link>
-                                </td>
-                            </tr>
-                        ))}
-                        {transactions.length === 0 && (
-                            <tr>
-                                <td colSpan={7} className="px-6 py-8 text-center text-gray-500">
-                                    No transactions found.
-                                </td>
-                            </tr>
-                        )}
-                    </tbody>
-                </table>
-            </div>
+            <Card>
+                <div className="relative w-full overflow-auto">
+                    <Table>
+                        <TableHeader className="bg-slate-50">
+                            <TableRow>
+                                <TableHead>Date</TableHead>
+                                <TableHead>Account</TableHead>
+                                <TableHead>Type</TableHead>
+                                <TableHead>Amount</TableHead>
+                                <TableHead>Reference</TableHead>
+                                <TableHead>Creator</TableHead>
+                                <TableHead>Actions</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {transactions.map((txn) => (
+                                <TableRow key={txn.id}>
+                                    <TableCell className="whitespace-nowrap">{txn.created_at.toLocaleString()}</TableCell>
+                                    <TableCell>
+                                        <div className="font-medium text-slate-900">{txn.account.customer.full_name}</div>
+                                        <CopyableText text={txn.account.id} truncateLength={8} className="text-slate-500" />
+                                    </TableCell>
+                                    <TableCell>
+                                        <span className={`inline-flex px-2 py-0.5 text-xs font-semibold rounded-md ${txn.txn_type === "credit" ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
+                                            {txn.txn_type}
+                                        </span>
+                                    </TableCell>
+                                    <TableCell className={`font-mono font-medium ${txn.txn_type === "credit" ? "text-emerald-600" : "text-red-600"}`}>
+                                        {txn.txn_type === "credit" ? "+" : "-"}
+                                        {Number(txn.amount).toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}
+                                    </TableCell>
+                                    <TableCell>{txn.reference || "-"}</TableCell>
+                                    <TableCell className="text-xs text-slate-500">{txn.creator.email}</TableCell>
+                                    <TableCell>
+                                        <Link href={`/transactions/${txn.id}`} className="text-blue-600 hover:underline font-medium text-xs">
+                                            View
+                                        </Link>
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                            {transactions.length === 0 && (
+                                <TableRow>
+                                    <TableCell colSpan={7} className="h-24 text-center text-slate-500">
+                                        No transactions found.
+                                    </TableCell>
+                                </TableRow>
+                            )}
+                        </TableBody>
+                    </Table>
+                </div>
+            </Card>
         </div>
     );
 }

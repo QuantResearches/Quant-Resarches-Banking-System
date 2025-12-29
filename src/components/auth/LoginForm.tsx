@@ -4,6 +4,10 @@ import { signIn } from "next-auth/react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff } from "lucide-react";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/Card";
+import { Label } from "@/components/ui/Label";
+import { Input } from "@/components/ui/Input";
+import { Button } from "@/components/ui/Button";
 
 export default function LoginForm() {
     const [email, setEmail] = useState("");
@@ -34,51 +38,53 @@ export default function LoginForm() {
     };
 
     return (
-        <div className="w-full max-w-sm bg-white border border-gray-200 shadow-sm relative overflow-hidden">
-            <div className="p-8">
-                <h2 className="mb-6 text-lg font-bold text-gray-900 flex items-center gap-2">
-                    <span className="w-1 h-5 bg-blue-600 block"></span>
+        <Card className="w-full max-w-sm">
+            <CardHeader className="space-y-1">
+                <CardTitle className="text-2xl font-bold flex items-center gap-2">
+                    <span className="w-1 h-6 bg-blue-600 block rounded-full"></span>
                     System Login
-                </h2>
-
+                </CardTitle>
+            </CardHeader>
+            <CardContent>
                 {error && (
-                    <div className="mb-6 p-4 text-sm text-red-700 bg-red-50 border-l-4 border-red-500" role="alert">
+                    <div className="mb-6 p-4 text-sm text-red-700 bg-red-50 border-l-4 border-red-500 rounded-sm" role="alert">
                         <p className="font-semibold">Authentication Failed</p>
                         <p>{error}</p>
                     </div>
                 )}
 
-                <form onSubmit={handleSubmit} className="space-y-6">
-                    <div>
-                        <label className="block mb-2 text-xs font-bold text-gray-500 uppercase tracking-wider">Email Address</label>
-                        <input
+                <form onSubmit={handleSubmit} className="space-y-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="email" className="uppercase text-xs font-bold text-slate-500 tracking-wider">Email Address</Label>
+                        <Input
+                            id="email"
                             type="email"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             disabled={isLoading}
-                            className="w-full p-3 text-sm text-gray-900 bg-gray-50 border border-gray-200 placeholder-gray-400 focus:bg-white focus:border-blue-600 focus:ring-1 focus:ring-blue-600 outline-none transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             placeholder="name@quant-researches.com"
                             required
                         />
                     </div>
 
-                    <div>
-                        <label className="block mb-2 text-xs font-bold text-gray-500 uppercase tracking-wider">Password</label>
+                    <div className="space-y-2">
+                        <Label htmlFor="password" className="uppercase text-xs font-bold text-slate-500 tracking-wider">Password</Label>
                         <div className="relative">
-                            <input
+                            <Input
+                                id="password"
                                 type={showPassword ? "text" : "password"}
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 disabled={isLoading}
-                                className="w-full p-3 text-sm text-gray-900 bg-gray-50 border border-gray-200 placeholder-gray-400 focus:bg-white focus:border-blue-600 focus:ring-1 focus:ring-blue-600 outline-none transition-colors pr-10 disabled:opacity-50 disabled:cursor-not-allowed"
                                 placeholder="••••••••"
+                                className="pr-10"
                                 required
                             />
                             <button
                                 type="button"
                                 onClick={() => setShowPassword(!showPassword)}
                                 disabled={isLoading}
-                                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 disabled:opacity-50"
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 disabled:opacity-50 focus:outline-none"
                                 tabIndex={-1}
                             >
                                 {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
@@ -86,24 +92,21 @@ export default function LoginForm() {
                         </div>
                     </div>
 
-                    <button
+                    <Button
                         type="submit"
                         disabled={isLoading}
-                        className="w-full py-3 px-4 text-sm font-bold text-white bg-slate-900 hover:bg-slate-800 focus:ring-2 focus:ring-offset-2 focus:ring-slate-900 transition-colors uppercase tracking-wide disabled:opacity-75 disabled:cursor-wait flex justify-center items-center gap-2"
+                        isLoading={isLoading}
+                        className="w-full uppercase tracking-wide font-bold"
                     >
-                        {isLoading ? (
-                            "Verifying Credentials..."
-                        ) : (
-                            "Secure Sign In"
-                        )}
-                    </button>
+                        Secure Sign In
+                    </Button>
                 </form>
-            </div>
-            <div className="px-8 py-4 bg-gray-50 border-t border-gray-100 text-center">
-                <p className="text-xs text-gray-500">
-                    By signing in, you agree to the <span className="text-blue-600 cursor-pointer hover:underline">Internal Security Policy</span>.
+            </CardContent>
+            <CardFooter className="bg-slate-50 border-t border-slate-100 py-4 justify-center">
+                <p className="text-xs text-slate-500 text-center">
+                    By signing in, you agree to the <span className="text-blue-600 cursor-pointer hover:underline font-medium">Internal Security Policy</span>.
                 </p>
-            </div>
-        </div>
+            </CardFooter>
+        </Card>
     );
 }

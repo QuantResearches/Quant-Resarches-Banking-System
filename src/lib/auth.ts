@@ -4,6 +4,7 @@ import { PrismaAdapter } from "@next-auth/prisma-adapter";
 import prisma from "@/lib/prisma";
 import bcrypt from "bcrypt";
 import { z } from "zod";
+import { Role } from "@prisma/client";
 
 const loginSchema = z.object({
     email: z.string().email(),
@@ -103,6 +104,7 @@ export const authOptions: NextAuthOptions = {
                 // Return user with session ID embedded
                 return {
                     id: user.id,
+                    email: user.email,
                     role: user.role,
                     sessionId: session.id, // Custom field to pass to JWT
                 };
@@ -150,8 +152,10 @@ export const authOptions: NextAuthOptions = {
                     data: { last_activity_at: now }
                 });
 
-                session.user.id = token.id;
-                session.user.role = token.role;
+                session.user.id = token.id as string;
+                session.user.role = token.role as Role;
+                session.user.email = (token.email || session.user.email) as string;
+                // session.user.name is not strictly needed if we don't use it, but safe to leave omitted
             }
             return session;
         },

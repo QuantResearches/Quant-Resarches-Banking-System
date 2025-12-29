@@ -2,6 +2,7 @@
 
 import { Check, Copy } from "lucide-react";
 import { useState } from "react";
+import { cn } from "@/lib/utils";
 
 interface CopyableTextProps {
     text: string;
@@ -22,7 +23,7 @@ export default function CopyableText({ text, label, truncateLength = 8, classNam
     const displayText = text.length > truncateLength ? `${text.slice(0, truncateLength)}...` : text;
 
     return (
-        <div className={`flex items-center gap-2 group cursor-pointer ${className}`} onClick={handleCopy} title="Click to copy">
+        <div className={cn("flex items-center gap-2 group cursor-pointer", className)} onClick={handleCopy} title="Click to copy">
             {label && <span className="sr-only">{label}</span>}
             <span className="font-mono text-gray-600 truncate">{displayText}</span>
             {copied ? (
