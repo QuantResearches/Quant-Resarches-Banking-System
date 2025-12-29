@@ -50,8 +50,12 @@ export default function ReverseAction({
                 disabled={loading}
                 className="flex items-center gap-2 px-4 py-2 bg-white border border-red-200 text-red-700 rounded hover:bg-red-50 text-sm font-medium disabled:opacity-50"
             >
-                {loading ? <Loader2 size={16} className="animate-spin" /> : <Undo2 size={16} />}
-                Reverse Transaction
+                {loading ? "Reversing..." : (
+                    <>
+                        <Undo2 size={16} />
+                        Reverse Transaction
+                    </>
+                )}
             </button>
 
             <ConfirmationModal

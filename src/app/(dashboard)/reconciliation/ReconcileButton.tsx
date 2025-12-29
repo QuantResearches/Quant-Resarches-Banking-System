@@ -40,8 +40,12 @@ export default function ReconcileButton() {
                 disabled={loading}
                 className="text-blue-600 hover:text-blue-800 font-medium text-xs flex items-center gap-1 disabled:opacity-50 disabled:cursor-wait"
             >
-                <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
-                {loading ? "Matching..." : "Reconcile"}
+                {loading ? "Matching Records..." : (
+                    <>
+                        <RefreshCw size={14} />
+                        Reconcile
+                    </>
+                )}
             </button>
 
             <ConfirmationModal

@@ -216,8 +216,7 @@ export default function KYCDetailPage({ params }: { params: Promise<{ id: string
                                 disabled={uploading || !file}
                                 className="w-full bg-blue-600 text-white py-2 rounded text-sm font-medium hover:bg-blue-700 disabled:opacity-50 flex justify-center gap-2"
                             >
-                                {uploading && <Loader2 size={16} className="animate-spin" />}
-                                from "Secure Upload"
+                                {uploading ? "Securing Upload..." : "Secure Upload"}
                             </button>
                         </form>
                     </div>

@@ -50,8 +50,12 @@ export default function LoanActions({ loanId, status }: LoanActionsProps) {
                     disabled={loading}
                     className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 disabled:opacity-50 text-sm font-medium"
                 >
-                    {loading ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle size={16} />}
-                    Approve Application
+                    {loading ? "Approving..." : (
+                        <>
+                            <CheckCircle size={16} />
+                            Approve Application
+                        </>
+                    )}
                 </button>
             )}
 
@@ -61,8 +65,12 @@ export default function LoanActions({ loanId, status }: LoanActionsProps) {
                     disabled={loading}
                     className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 text-sm font-medium"
                 >
-                    {loading ? <Loader2 size={16} className="animate-spin" /> : <Wallet size={16} />}
-                    Disburse Funds
+                    {loading ? "Disbursing..." : (
+                        <>
+                            <Wallet size={16} />
+                            Disburse Funds
+                        </>
+                    )}
                 </button>
             )}
 
