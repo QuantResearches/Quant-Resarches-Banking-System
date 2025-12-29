@@ -11,6 +11,7 @@ const loginSchema = z.object({
 });
 
 export const authOptions: NextAuthOptions = {
+    secret: process.env.NEXTAUTH_SECRET, // Explicitly load secret
     adapter: PrismaAdapter(prisma as any), // Cast to any to handle Prisma Extension types
     session: {
         strategy: "jwt", // We use JWT to carry the session ID, effectively implementing DB sessions
