@@ -11,7 +11,7 @@ const loginSchema = z.object({
 });
 
 export const authOptions: NextAuthOptions = {
-    adapter: PrismaAdapter(prisma), // Used for other things if needed, but manual for credentials
+    adapter: PrismaAdapter(prisma as any), // Cast to any to handle Prisma Extension types
     session: {
         strategy: "jwt", // We use JWT to carry the session ID, effectively implementing DB sessions
         maxAge: 8 * 60 * 60, // 8 hours absolute max
