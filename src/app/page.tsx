@@ -32,7 +32,8 @@ export default async function Home() {
             <h2 className="font-semibold text-gray-700">Environment Diagnostics:</h2>
             <ul className="list-disc list-inside bg-gray-50 p-4 rounded border border-gray-200">
               <li>NODE_ENV: {process.env.NODE_ENV}</li>
-              <li>DATABASE_URL: {process.env.DATABASE_URL ? "Defined (Length: " + process.env.DATABASE_URL.length + ")" : "MISSING"}</li>
+              <li>POSTGRES_PRISMA_URL: {process.env.POSTGRES_PRISMA_URL ? "Defined (Length: " + process.env.POSTGRES_PRISMA_URL.length + ")" : "MISSING"}</li>
+              <li>POSTGRES_URL_NON_POOLING: {process.env.POSTGRES_URL_NON_POOLING ? "Defined (Length: " + process.env.POSTGRES_URL_NON_POOLING.length + ")" : "MISSING"}</li>
               <li>NEXTAUTH_SECRET: {process.env.NEXTAUTH_SECRET ? "Defined (Length: " + process.env.NEXTAUTH_SECRET.length + ")" : "MISSING"}</li>
               <li>NEXTAUTH_URL: {process.env.NEXTAUTH_URL || "MISSING"}</li>
             </ul>

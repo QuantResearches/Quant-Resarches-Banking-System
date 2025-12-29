@@ -9,7 +9,8 @@ export async function GET() {
         timestamp: new Date().toISOString(),
         env: {
             node_env: process.env.NODE_ENV,
-            has_db_url: !!process.env.DATABASE_URL,
+            has_db_url: !!process.env.POSTGRES_PRISMA_URL,
+            has_direct_url: !!process.env.POSTGRES_URL_NON_POOLING,
             has_auth_secret: !!process.env.NEXTAUTH_SECRET
         }
     });
