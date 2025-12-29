@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { maskEmail } from "@/lib/masking";
+import ConfirmationModal from "@/components/ui/ConfirmationModal";
 
 interface User {
     id: string;
@@ -14,23 +15,25 @@ interface User {
 
 export default function UsersTable({ users }: { users: User[] }) {
     const router = useRouter();
-    const [loading, setLoading] = useState<string | null>(null);
+    const [loading, setLoading] = useState<string | null>(null); // Restore loading state for API calls
+    const [targetUser, setTargetUser] = useState<{ id: string, active: boolean } | null>(null);
 
-    const toggleStatus = async (id: string, currentStatus: boolean) => {
-        if (!confirm(`Are you sure you want to ${currentStatus ? "disable" : "enable"} this user?`)) return;
+    const initiateToggle = (id: string, currentStatus: boolean) => {
+        if (!currentStatus) return; // Only disabling supported per spec
+        setTargetUser({ id, active: currentStatus });
+    };
 
-        // Note: My API only has /disable endpoint. Re-enabling would require /enable or PATCH is_active.
-        // My spec said "POST /api/users/:id/disable". Didn't specify enable.
-        // I will implement disable only for now as per spec strictness.
-        if (!currentStatus) return;
+    const confirmToggle = async () => {
+        if (!targetUser) return;
 
-        setLoading(id);
+        setLoading(targetUser.id);
         try {
-            const res = await fetch(`/api/users/${id}/disable`, { method: "POST" });
+            const res = await fetch(`/api/users/${targetUser.id}/disable`, { method: "POST" });
             if (!res.ok) alert("Failed to disable user");
             else router.refresh();
         } finally {
             setLoading(null);
+            setTargetUser(null);
         }
     };
 
@@ -60,7 +63,7 @@ export default function UsersTable({ users }: { users: User[] }) {
                             <td className="px-6 py-4 text-right">
                                 {user.is_active && (
                                     <button
-                                        onClick={() => toggleStatus(user.id, user.is_active)}
+                                        onClick={() => initiateToggle(user.id, user.is_active)}
                                         disabled={loading === user.id}
                                         className="text-red-600 hover:underline disabled:opacity-50"
                                     >
@@ -72,6 +75,17 @@ export default function UsersTable({ users }: { users: User[] }) {
                     ))}
                 </tbody>
             </table>
+
+            <ConfirmationModal
+                isOpen={!!targetUser}
+                onClose={() => setTargetUser(null)}
+                onConfirm={confirmToggle}
+                title="Disable User"
+                message="Are you sure you want to disable this user? They will no longer be able to log in."
+                confirmText="Disable Access"
+                isDestructive={true}
+                isLoading={!!loading}
+            />
         </div>
     );
 }

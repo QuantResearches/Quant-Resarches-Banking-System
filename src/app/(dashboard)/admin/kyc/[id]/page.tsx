@@ -6,11 +6,14 @@ import { useRouter } from "next/navigation";
 import { Loader2, ArrowLeft, Upload, Eye, CheckCircle, XCircle, FileText } from "lucide-react";
 import Link from "next/link";
 
+import ConfirmationModal from "@/components/ui/ConfirmationModal";
+
 export default function KYCDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const [id, setId] = useState<string | null>(null);
     const [profile, setProfile] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [uploading, setUploading] = useState(false);
+    const [reviewAction, setReviewAction] = useState<"APPROVE" | "REJECT" | null>(null);
     const router = useRouter();
 
     // Form Stats
@@ -95,21 +98,24 @@ export default function KYCDetailPage({ params }: { params: Promise<{ id: string
         }
     };
 
-    const handleReview = async (action: "APPROVE" | "REJECT") => {
-        if (!confirm(`Are you sure you want to ${action} this KYC?`)) return;
+    const handleReviewConfirm = async () => {
+        if (!reviewAction) return;
+
         try {
             const res = await fetch("/api/kyc/review", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     profile_id: profile.id,
-                    action
+                    action: reviewAction
                 })
             });
             if (!res.ok) throw new Error("Review Failed");
             if (id) fetchProfile(id);
         } catch (e) {
             alert("Error processing review");
+        } finally {
+            setReviewAction(null);
         }
     };
 
@@ -211,7 +217,7 @@ export default function KYCDetailPage({ params }: { params: Promise<{ id: string
                                 className="w-full bg-blue-600 text-white py-2 rounded text-sm font-medium hover:bg-blue-700 disabled:opacity-50 flex justify-center gap-2"
                             >
                                 {uploading && <Loader2 size={16} className="animate-spin" />}
-                                Secure Upload
+                                from "Secure Upload"
                             </button>
                         </form>
                     </div>
@@ -221,20 +227,32 @@ export default function KYCDetailPage({ params }: { params: Promise<{ id: string
             {/* Action Bar */}
             <div className="flex justify-end gap-4 pt-4 border-t">
                 <button
-                    onClick={() => handleReview("REJECT")}
+                    onClick={() => setReviewAction("REJECT")}
                     className="flex items-center gap-2 px-6 py-2 border border-red-300 text-red-700 rounded hover:bg-red-50 font-medium"
                 >
                     <XCircle size={18} />
                     Reject KYC
                 </button>
                 <button
-                    onClick={() => handleReview("APPROVE")}
+                    onClick={() => setReviewAction("APPROVE")}
                     className="flex items-center gap-2 px-6 py-2 bg-green-600 text-white rounded hover:bg-green-700 font-medium"
                 >
                     <CheckCircle size={18} />
                     Verify & Approve
                 </button>
             </div>
+
+            <ConfirmationModal
+                isOpen={!!reviewAction}
+                onClose={() => setReviewAction(null)}
+                onConfirm={handleReviewConfirm}
+                title={reviewAction === "APPROVE" ? "Approve KYC Verification?" : "Reject KYC Verification?"}
+                message={reviewAction === "APPROVE"
+                    ? "This will mark the customer as verified and allow them to access banking features."
+                    : "This will reject the customer's KYC application. They will need to re-submit documents."}
+                confirmText={reviewAction === "APPROVE" ? "Verify & Approve" : "Reject Application"}
+                isDestructive={reviewAction === "REJECT"}
+            />
         </div>
     );
 }
