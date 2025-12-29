@@ -1,0 +1,686 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+} 
+
+// User Roles
+enum Role {
+  admin
+  finance
+  viewer
+}
+
+// Customer Status
+enum CustomerStatus {
+  active
+  inactive
+}
+
+// Account Type
+enum AccountType {
+  wallet
+  prepaid
+  internal
+}
+
+// Account Status
+enum AccountStatus {
+  active
+  frozen
+  closed
+}
+
+// Transaction Type
+enum TransactionType {
+  credit
+  debit
+}
+
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  password_hash String
+  role          Role
+  is_active     Boolean   @default(true)
+  created_at    DateTime  @default(now())
+  updated_at    DateTime  @updatedAt
+  last_login_at DateTime?
+
+  // MFA
+  mfa_secret    String?    // Encrypted Secret
+  mfa_enabled   Boolean    @default(false)
+
+  sessions      Session[]
+  audit_logs            AuditLog[]
+  transactions_created  Transaction[] @relation("Creator")
+  transactions_approved Transaction[] @relation("Approver")
+  customers     Customer[]    // Creator of customer
+  accounts      Account[]     // Creator of account
+  uploaded_statements BankStatement[]
+  reconciliations     Reconciliation[]
+  risk_subjects       RiskAlert[]   @relation("RiskSubject")
+  risk_resolutions    RiskAlert[]   @relation("RiskResolver")
+  closed_periods      FiscalPeriod[]
+  evidence_uploads    TransactionEvidence[]
+  audit_notes         AuditNote[]
+
+  @@map("users")
+}
+
+model SecurityEvent {
+  id          String   @id @default(uuid())
+  user_id     String?
+  event_type  String   // LOGIN_FAIL, UNAUTHORIZED_ACCESS, SELF_APPROVAL_ATTEMPT
+  severity    String   // LOW, MEDIUM, HIGH, CRITICAL
+  description String
+  ip_address  String?
+  user_agent  String?
+  metadata    Json?
+  created_at  DateTime @default(now())
+
+  @@map("security_events")
+  @@index([event_type])
+  @@index([created_at])
+}
+
+model Session {
+  id               String   @id @default(uuid())
+  user_id          String
+  created_at       DateTime @default(now())
+  expires_at       DateTime
+  last_activity_at DateTime @default(now())
+  ip_address       String?
+  user_agent       String?
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model Customer {
+  id         String         @id @default(uuid())
+  full_name  String
+  email      String         @unique
+  phone      String
+  address    String
+  status     CustomerStatus @default(active)
+  created_by String
+  created_at DateTime       @default(now())
+  updated_at DateTime       @updatedAt
+
+  creator  User      @relation(fields: [created_by], references: [id])
+  accounts Account[]
+  loans    Loan[]
+  profile  CustomerProfile?
+
+  @@map("customers")
+}
+
+model Account { 
+  id           String        @id @default(uuid())
+  customer_id  String
+  account_type AccountType
+  status       AccountStatus @default(active)
+  created_by   String
+  created_at   DateTime      @default(now())
+
+  customer     Customer         @relation(fields: [customer_id], references: [id])
+  creator      User             @relation(fields: [created_by], references: [id])
+  transactions Transaction[]
+  balance      AccountBalance?
+  risk_alerts  RiskAlert[]
+
+  @@map("accounts")
+}
+
+// Transaction Status (Lifecycle)
+enum TransactionStatus {
+  DRAFT
+  PENDING
+  POSTED
+  REVERSED
+  REJECTED
+}
+
+enum TransactionChannel {
+  WEB
+  API
+  SYSTEM
+  IMPORT
+}
+
+// IMMUTABLE LEDGER
+model Transaction {
+  id               String            @id @default(uuid())
+  account_id       String
+  txn_type         TransactionType
+  amount           Decimal           @db.Decimal(15, 2)
+  reference        String?
+  description      String?           // Narration
+  status           TransactionStatus @default(POSTED) // Default to POSTED for legacy/migration
+  channel          TransactionChannel @default(WEB)
+  
+  // Banking Dates
+  effective_date   DateTime          @default(now()) // Value Date
+
+  // Compliance
+  purpose_code     String?
+  rejection_reason String?
+
+  created_by  String
+  created_at  DateTime @default(now()) // Physical Time
+
+  approved_by String?
+  approved_at DateTime?
+
+  // Reversal Linking
+  reversal_of_id   String?           @unique
+  reversal_of      Transaction?      @relation("Reversal", fields: [reversal_of_id], references: [id])
+  reversed_by      Transaction?      @relation("Reversal")
+
+  account  Account @relation(fields: [account_id], references: [id])
+  creator  User    @relation("Creator", fields: [created_by], references: [id])
+  approver User?   @relation("Approver", fields: [approved_by], references: [id])
+  gl_entries GLEntry[]
+  risk_alerts RiskAlert[]
+  evidence    TransactionEvidence[]
+  
+  cost_center_id String?
+  cost_center    CostCenter? @relation(fields: [cost_center_id], references: [id])
+  
+  audit_notes    AuditNote[]
+
+  @@map("transactions")
+  @@index([status]) 
+  @@index([effective_date])
+}
+
+// DERIVED CACHE
+model AccountBalance {
+  account_id         String   @id
+  balance            Decimal  @default(0) @db.Decimal(15, 2)
+  last_calculated_at DateTime @default(now())
+
+  account Account @relation(fields: [account_id], references: [id], onDelete: Cascade)
+
+  @@map("account_balances")
+}
+
+// IMMUTABLE AUDIT LOG
+model AuditLog {
+  id           String   @id @default(uuid())
+  user_id      String
+  action       String
+  entity_type  String
+  entity_id    String
+  old_value    Json?
+  new_value    Json?
+  ip_address   String?
+  user_agent   String?
+  created_at   DateTime @default(now())
+
+  user User @relation(fields: [user_id], references: [id])
+
+  @@map("audit_logs")
+}
+
+model FailedLoginAttempt {
+  id           String   @id @default(uuid())
+  email        String
+  ip_address   String?
+  attempted_at DateTime @default(now())
+
+  @@map("failed_login_attempts")
+}
+
+// --- PHASE 2: CORE ACCOUNTING (GENERAL LEDGER) ---
+
+enum GLAccountType {
+  asset
+  liability
+  equity
+  income
+  expense
+}
+
+enum EntryType {
+  debit
+  credit
+}
+
+model GLAccount {
+  id          String        @id @default(uuid())
+  code        String        @unique // e.g., "1001", "2001"
+  name        String        // e.g., "Cash Vault", "Customer Deposits"
+  type        GLAccountType
+  balance     Decimal       @default(0) @db.Decimal(20, 2) // Larger precision for GL
+  is_system   Boolean       @default(false) // Cannot be deleted
+  
+  entries     GLEntry[]
+  created_at  DateTime      @default(now())
+  updated_at  DateTime      @updatedAt
+
+  @@map("gl_accounts")
+}
+
+model GLEntry {
+  id             String    @id @default(uuid())
+  transaction_id String?   // Link to operational transaction (optional for manual adjustments)
+  gl_account_id  String
+  amount         Decimal   @db.Decimal(20, 2)
+  type           EntryType // Debit or Credit
+  description    String?
+  posted_at      DateTime  @default(now())
+
+  gl_account     GLAccount   @relation(fields: [gl_account_id], references: [id])
+  transaction    Transaction? @relation(fields: [transaction_id], references: [id])
+  reconciliation Reconciliation?
+
+  @@map("gl_entries")
+  @@index([transaction_id])
+  @@index([gl_account_id])
+  @@index([posted_at])
+}
+
+// --- PHASE 3: RECONCILIATION ---
+
+enum StatementStatus {
+  pending
+  processed
+  error
+}
+
+enum LineStatus {
+  unmatched
+  matched
+  exception
+}
+
+model BankStatement {
+  id             String      @id @default(uuid())
+  filename       String
+  upload_date    DateTime    @default(now())
+  uploaded_by    String
+  status         StatementStatus @default(pending)
+  
+  lines          StatementLine[]
+  uploader       User        @relation(fields: [uploaded_by], references: [id])
+
+  @@map("bank_statements")
+}
+
+model StatementLine {
+  id             String      @id @default(uuid())
+  statement_id   String
+  date           DateTime
+  amount         Decimal     @db.Decimal(15, 2)
+  currency       String      @default("USD")
+  description    String
+  reference      String?
+  status         LineStatus  @default(unmatched)
+  
+  statement      BankStatement @relation(fields: [statement_id], references: [id])
+  reconciliation Reconciliation?
+
+  @@map("statement_lines")
+}
+
+model Reconciliation {
+  id                String   @id @default(uuid())
+  statement_line_id String   @unique
+  gl_entry_id       String   @unique
+  matched_by        String?
+  matched_at        DateTime @default(now())
+  match_method      String   // "auto", "manual"
+
+  statement_line    StatementLine @relation(fields: [statement_line_id], references: [id])
+  gl_entry          GLEntry       @relation(fields: [gl_entry_id], references: [id])
+  matcher           User?         @relation(fields: [matched_by], references: [id])
+
+  @@map("reconciliations")
+}
+
+// --- PHASE 4: RISK MANAGEMENT ---
+
+enum RiskType {
+  velocity
+  large_amount
+  dormancy
+  watchlist
+}
+
+enum RiskSeverity {
+  low
+  medium
+  high
+  critical
+}
+
+enum RiskStatus {
+  open
+  investigating
+  resolved
+  false_positive
+}
+
+model RiskAlert {
+  id             String       @id @default(uuid())
+  user_id        String?
+  account_id     String?
+  transaction_id String?
+  type           RiskType
+  severity       RiskSeverity
+  description    String
+  status         RiskStatus   @default(open)
+  created_at     DateTime     @default(now())
+  resolved_at    DateTime?
+  resolved_by    String?
+
+  user           User?        @relation("RiskSubject", fields: [user_id], references: [id])
+  account        Account?     @relation(fields: [account_id], references: [id])
+  transaction    Transaction? @relation(fields: [transaction_id], references: [id])
+  resolver       User?        @relation("RiskResolver", fields: [resolved_by], references: [id])
+
+  @@map("risk_alerts")
+}
+
+// --- PHASE 5: COMPLIANCE ---
+
+enum PeriodStatus {
+  open
+  closed
+}
+
+model FiscalPeriod {
+  id             String       @id @default(uuid())
+  name           String       @unique // e.g. "2023-12", "Q1-2024"
+  start_date     DateTime
+  end_date       DateTime
+  status         PeriodStatus @default(open)
+  closed_at      DateTime?
+  closed_by      String?
+  
+  closer         User?        @relation(fields: [closed_by], references: [id])
+
+  @@map("fiscal_periods")
+  @@index([start_date, end_date])
+}
+
+model TransactionEvidence {
+  id             String      @id @default(uuid())
+  transaction_id String
+  filename       String
+  file_path      String      // Local path or URL
+  content_type   String      // e.g. application/pdf
+  file_size      Int
+  uploaded_at    DateTime    @default(now())
+  uploaded_by    String
+
+  transaction    Transaction @relation(fields: [transaction_id], references: [id])
+  uploader       User        @relation(fields: [uploaded_by], references: [id])
+
+  @@map("transaction_evidence")
+}
+
+// --- LOAN MANAGEMENT SYSTEM ---
+
+enum LoanStatus {
+  APPLIED
+  APPROVED
+  REJECTED
+  DISBURSED
+  ACTIVE
+  CLOSED
+  DEFAULTED
+}
+
+enum InterestType {
+  FLAT_RATE
+  REDUCING_BALANCE
+}
+
+enum RepaymentFrequency {
+  WEEKLY
+  MONTHLY
+  QUARTERLY
+  YEARLY
+}
+
+enum RepaymentStatus {
+  PENDING
+  PARTIAL
+  PAID
+  OVERDUE
+}
+
+model LoanProduct {
+  id                  String   @id @default(uuid())
+  name                String   @unique // e.g., "Personal Loan", "Home Loan"
+  description         String?
+  
+  // Configuration
+  min_amount          Decimal  @db.Decimal(15, 2)
+  max_amount          Decimal  @db.Decimal(15, 2)
+  min_tenure_months   Int
+  max_tenure_months   Int
+  interest_rate_min   Decimal  @db.Decimal(5, 2) // Annual %
+  interest_rate_max   Decimal  @db.Decimal(5, 2)
+  
+  interest_type       InterestType @default(REDUCING_BALANCE)
+  
+  active              Boolean  @default(true)
+  created_at          DateTime @default(now())
+  updated_at          DateTime @updatedAt
+
+  loans               Loan[]
+
+  @@map("loan_products")
+}
+
+model Loan {
+  id                  String   @id @default(uuid())
+  customer_id         String
+  product_id          String
+  
+  // Application Details
+  applied_amount      Decimal  @db.Decimal(15, 2)
+  approved_amount     Decimal? @db.Decimal(15, 2)
+  interest_rate       Decimal  @db.Decimal(5, 2) // Final agreed rate
+  tenure_months       Int
+  
+  status              LoanStatus @default(APPLIED)
+  
+  // Dates
+  applied_at          DateTime   @default(now())
+  approved_at         DateTime?
+  disbursed_at        DateTime?
+  closed_at           DateTime?
+  
+  // Relations
+  customer            Customer    @relation(fields: [customer_id], references: [id])
+  product             LoanProduct @relation(fields: [product_id], references: [id])
+  repayments          LoanRepayment[]
+  
+  // Approvals
+  approved_by         String?    // User ID
+  rejected_reason     String?
+  
+  // Accounting
+  accrued_interest    Decimal    @default(0) @db.Decimal(15, 2)
+
+  @@map("loans")
+  @@index([status])
+  @@index([customer_id])
+}
+
+model LoanRepayment {
+  id             String          @id @default(uuid())
+  loan_id        String
+  
+  due_date       DateTime
+  amount_due     Decimal         @db.Decimal(15, 2)
+  amount_paid    Decimal         @default(0) @db.Decimal(15, 2)
+  
+  status         RepaymentStatus @default(PENDING)
+  paid_at        DateTime?
+  
+  // Waterfall components
+  principal_component Decimal?   @db.Decimal(15, 2)
+  interest_component  Decimal?   @db.Decimal(15, 2)
+  penalty_amount      Decimal    @default(0) @db.Decimal(15, 2)
+
+  loan           Loan            @relation(fields: [loan_id], references: [id])
+
+  @@map("loan_repayments")
+  @@index([loan_id])
+  @@index([due_date])
+  @@index([status])
+}
+
+model IdempotencyLog {
+  key        String   @id
+  path       String
+  method     String
+  status     Int
+  response   Json
+  created_at DateTime @default(now())
+
+  @@map("idempotency_logs")
+}
+
+// --- KYC / AML SYSTEM ---
+
+enum KYCStatus {
+  DRAFT
+  PENDING_VERIFICATION
+  VERIFIED
+  REJECTED
+  FROZEN
+}
+
+enum RiskLevel {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum DocumentType {
+  AADHAAR_MASKED
+  PAN
+  PASSPORT
+  VOTER_ID
+  DRIVING_LICENSE
+  UTILITY_BILL
+  PHOTO
+}
+
+model CustomerProfile {
+  id                  String     @id @default(uuid())
+  customer_id         String     @unique
+  
+  // PII (Separated from Master)
+  dob                 DateTime?
+  gender              String?
+  marital_status      String?
+  father_name         String?
+  mother_name         String?
+  
+  // Address
+  current_address     String?
+  permanent_address   String?
+  city                String?
+  state               String?
+  pincode             String?
+  country             String     @default("IN")
+  
+  // Status
+  kyc_status          KYCStatus  @default(DRAFT)
+  last_kyc_date       DateTime?
+  next_rekyc_date     DateTime?
+  
+  // Security
+  vault_reference_id  String?    // Link to Aadhaar Data Vault
+  pan_encrypted       String?    // Column-level encryption
+
+  created_at          DateTime   @default(now())
+  updated_at          DateTime   @updatedAt
+
+  customer            Customer   @relation(fields: [customer_id], references: [id])
+  documents           KYCDocument[]
+  risk_profile        KYCRiskProfile?
+
+  @@map("customer_profiles")
+  @@index([kyc_status])
+}
+
+model KYCDocument {
+  id                  String       @id @default(uuid())
+  profile_id          String
+  type                DocumentType
+  
+  // Storage & Security
+  document_number     String?      // Masked or Hashed
+  s3_key              String       // Object Store Reference
+  
+  // Verification
+  is_verified         Boolean      @default(false)
+  verified_at         DateTime?
+  verified_by         String?      // User ID
+  
+  uploaded_at         DateTime     @default(now())
+
+  profile             CustomerProfile @relation(fields: [profile_id], references: [id])
+
+  @@map("kyc_documents")
+}
+
+model KYCRiskProfile {
+  id                  String     @id @default(uuid())
+  profile_id          String     @unique
+  
+  risk_rating         RiskLevel  @default(LOW)
+  pep_status          Boolean    @default(false)
+  income_range        String?
+  occupation          String?
+  
+  last_review_date    DateTime?
+  next_review_date    DateTime?
+
+  profile             CustomerProfile @relation(fields: [profile_id], references: [id])
+
+  @@map("kyc_risk_profiles")
+}
+
+// --- COST CENTERS ---
+
+model CostCenter {
+  id          String   @id @default(uuid())
+  code        String   @unique
+  name        String
+  description String?
+  is_active   Boolean  @default(true)
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  transactions Transaction[]
+
+  @@map("cost_centers")
+}
+model AuditNote {
+  id             String   @id @default(uuid())
+  transaction_id String
+  note           String
+  created_by     String   // Auditor User ID
+  created_at     DateTime @default(now())
+
+  transaction    Transaction @relation(fields: [transaction_id], references: [id])
+  author         User        @relation(fields: [created_by], references: [id])
+  
+  @@map("audit_notes")
+  @@index([transaction_id])
+}
