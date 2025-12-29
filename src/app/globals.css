@@ -12,6 +12,20 @@
   --font-mono: var(--font-geist-mono);
 }
 
+@keyframes progress {
+  0% {
+    transform: translateX(-100%);
+  }
+
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.animate-progress {
+  animation: progress 1.5s infinite linear;
+}
+
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #0a0a0a;
