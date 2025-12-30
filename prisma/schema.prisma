@@ -23,8 +23,9 @@ enum CustomerStatus {
 
 // Account Type
 enum AccountType {
+  savings
+  current
   wallet
-  prepaid
   internal
 }
 

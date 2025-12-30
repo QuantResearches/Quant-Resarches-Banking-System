@@ -1,14 +1,15 @@
-
 "use client";
 
 import { useState } from "react";
 import { Plus, X, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useStatusPopup } from "@/hooks/useStatusPopup";
 
 export default function CreateProductForm() {
     const [isOpen, setIsOpen] = useState(false);
     const [loading, setLoading] = useState(false);
     const router = useRouter();
+    const { showError, showSuccess, PopupComponent } = useStatusPopup();
 
     const [formData, setFormData] = useState({
         name: "",
@@ -48,9 +49,9 @@ export default function CreateProductForm() {
 
             setIsOpen(false);
             router.refresh();
-            alert("Loan Product Created Successfully!");
+            showSuccess("Loan Product Created Successfully!");
         } catch (error: any) {
-            alert(error.message);
+            showError(error.message);
         } finally {
             setLoading(false);
         }
@@ -170,6 +171,7 @@ export default function CreateProductForm() {
                     </div>
                 </form>
             </div>
+            <PopupComponent />
         </div>
     );
 }

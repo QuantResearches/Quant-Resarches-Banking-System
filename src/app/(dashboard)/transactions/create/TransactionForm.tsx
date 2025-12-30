@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/Card";
 import { Label } from "@/components/ui/Label";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
+import { useStatusPopup } from "@/hooks/useStatusPopup";
 
 interface Props {
     accounts: any[];
@@ -15,19 +16,19 @@ interface Props {
 export default function TransactionForm({ accounts }: Props) {
     const router = useRouter();
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+    const { showSuccess, showError, PopupComponent } = useStatusPopup();
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         setLoading(true);
-        setError(null);
 
         const formData = new FormData(e.currentTarget);
         const data = {
             account_id: formData.get("account_id"),
             txn_type: formData.get("txn_type"),
-            amount: Number(formData.get("amount")),
+            amount: parseFloat(formData.get("amount") as string),
             reference: formData.get("reference"),
+            description: formData.get("description"),
         };
 
         try {
@@ -37,117 +38,104 @@ export default function TransactionForm({ accounts }: Props) {
                 headers: { "Content-Type": "application/json" },
             });
 
-            if (!res.ok) {
-                const json = await res.json();
-                throw new Error(json.error || "Failed to record transaction");
-            }
-
             const json = await res.json();
 
-            if (json.status === "pending_approval") {
-                alert("Transaction exceeds your limit. It has been submitted for approval.");
+            if (!res.ok) {
+                if (res.status === 402 || res.status === 403) {
+                    showSuccess("Transaction submitted for approval.");
+                    router.push("/approvals?status=pending");
+                    return;
+                }
+                throw new Error(json.error || "Transaction failed");
             }
 
-            router.push("/transactions");
+            showSuccess("Transaction Recorded Successfully");
             router.refresh();
+            router.push("/transactions");
+
         } catch (err: any) {
-            setError(err.message);
+            showError(err.message);
         } finally {
             setLoading(false);
         }
     };
 
     return (
-        <Card className="border-slate-200 shadow-sm max-w-2xl mx-auto">
-            <CardContent className="p-6">
-                <div className="flex items-center gap-2 mb-6 text-slate-900">
-                    <div className="p-2 bg-blue-100 text-blue-600 rounded-lg">
-                        <FileText size={20} />
-                    </div>
-                    <h2 className="text-lg font-semibold">Record New Transaction</h2>
+        <>
+            <form onSubmit={handleSubmit} className="space-y-6">
+                <div>
+                    <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                        Record New Transaction
+                    </h2>
+                    <p className="text-sm text-gray-500">Enter transaction details below.</p>
                 </div>
 
-                {error && (
-                    <div className="mb-6 p-4 bg-red-50 text-red-700 text-sm border border-red-200 rounded-md flex items-center gap-2">
-                        <span className="font-medium">Error:</span> {error}
-                    </div>
-                )}
-
-                <form onSubmit={handleSubmit} className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
-                        <Label>Select Account</Label>
-                        <div className="relative">
-                            <select
-                                name="account_id"
-                                required
-                                className="w-full p-2.5 bg-white border border-slate-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none appearance-none font-medium text-slate-700"
-                            >
-                                <option value="">-- Choose Account --</option>
-                                {accounts.map(a => (
-                                    <option key={a.id} value={a.id}>
-                                        {a.customer.full_name} • {a.account_type.toUpperCase()} • ₹{Number(a.balance?.balance || 0).toLocaleString()}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-6">
-                        <div className="space-y-2">
-                            <Label>Transaction Type</Label>
-                            <div className="relative">
-                                <select
-                                    name="txn_type"
-                                    required
-                                    className="w-full p-2.5 bg-white border border-slate-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none appearance-none font-medium text-slate-700"
-                                >
-                                    <option value="credit">Credit (Deposit)</option>
-                                    <option value="debit">Debit (Withdrawal)</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div className="space-y-2">
-                            <Label>Amount (₹)</Label>
-                            <Input
-                                name="amount"
-                                type="number"
-                                step="0.01"
-                                min="0.01"
-                                required
-                                placeholder="0.00"
-                                className="font-mono"
-                            />
-                        </div>
+                        <Label htmlFor="account_id">Select Account</Label>
+                        <select
+                            name="account_id"
+                            id="account_id"
+                            required
+                            className="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                            <option value="">-- Select Account --</option>
+                            {accounts.map((acc) => (
+                                <option key={acc.id} value={acc.id}>
+                                    {acc.customer.full_name} • {acc.account_type.toUpperCase()} • ₹{acc.balance}
+                                </option>
+                            ))}
+                        </select>
                     </div>
 
                     <div className="space-y-2">
-                        <Label>Reference / Description</Label>
+                        <Label htmlFor="txn_type">Transaction Type</Label>
+                        <select
+                            name="txn_type"
+                            id="txn_type"
+                            required
+                            className="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                            <option value="credit">Credit (Deposit)</option>
+                            <option value="debit">Debit (Withdrawal)</option>
+                        </select>
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label htmlFor="amount">Amount (₹)</Label>
                         <Input
-                            name="reference"
-                            placeholder="e.g. INV-2023-001 or Cash Deposit"
+                            type="number"
+                            name="amount"
+                            id="amount"
+                            placeholder="0.00"
+                            step="0.01"
+                            min="0.01"
+                            required
                         />
                     </div>
 
-                    <div className="pt-4 flex justify-end gap-3">
-                        <Button
-                            type="button"
-                            variant="secondary"
-                            onClick={() => router.back()}
-                            disabled={loading}
-                        >
-                            Cancel
-                        </Button>
-                        <Button
-                            type="submit"
-                            disabled={loading}
-                            className="bg-blue-600 hover:bg-blue-700 min-w-[150px]"
-                        >
-                            {loading ? <Loader2 size={16} className="animate-spin mr-2" /> : <CheckCircle2 size={16} className="mr-2" />}
-                            {loading ? "Processing..." : "Submit Transaction"}
-                        </Button>
+                    <div className="space-y-2">
+                        <Label htmlFor="reference">Reference / Description</Label>
+                        <Input
+                            type="text"
+                            name="reference"
+                            id="reference"
+                            placeholder="e.g. INV-2023-001 or Cash Deposit"
+                        />
                     </div>
-                </form>
-            </CardContent>
-        </Card>
+                </div>
+
+                <div className="flex justify-end gap-3 pt-4">
+                    <Button type="button" variant="outline" onClick={() => router.back()}>
+                        Cancel
+                    </Button>
+                    <Button type="submit" disabled={loading}>
+                        {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Submit Transaction
+                    </Button>
+                </div>
+            </form>
+            <PopupComponent />
+        </>
     );
 }

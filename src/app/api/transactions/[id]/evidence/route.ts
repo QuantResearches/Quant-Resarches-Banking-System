@@ -12,7 +12,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     }
 
     try {
-        const { id } = params;
+        const { id } = await params; // Await params for Next.js 15+ support
         // Expecting FormData for real file upload in Vercel Blob
         // But for this V1 json mock, we can't upload 'real' files easily without client-side FormData.
         // I'll assume the client is sending JSON for now as per previous step, BUT Vercel Blob needs a file/blob.
@@ -51,8 +51,28 @@ export async function POST(req: Request, { params }: { params: { id: string } })
             return NextResponse.json({ error: "No file provided" }, { status: 400 });
         }
 
-        const blob = await put(file.name, file, {
+        const documentType = formData.get('documentType') as string || 'general';
+
+        // Fetch Transaction to get Customer ID for folder structure
+        const transaction = await prisma.transaction.findUnique({
+            where: { id },
+            include: { account: true }
+        });
+
+        if (!transaction) {
+            return NextResponse.json({ error: "Transaction not found" }, { status: 404 });
+        }
+
+        const customerId = transaction.account.customer_id;
+        // Sanitize documentType to ensure folder safety
+        const safeDocType = documentType.replace(/[^a-z0-9_-]/gi, '_').toLowerCase();
+
+        const folderPath = `customers/${customerId}/${safeDocType}/`;
+        const finalPath = folderPath + file.name;
+
+        const blob = await put(finalPath, file, {
             access: 'public',
+            addRandomSuffix: true,
         });
 
         // @ts-ignore

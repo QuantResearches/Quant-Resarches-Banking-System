@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect } from "react";
@@ -7,6 +6,7 @@ import { Loader2, ArrowLeft, Upload, Eye, CheckCircle, XCircle, FileText } from 
 import Link from "next/link";
 
 import ConfirmationModal from "@/components/ui/ConfirmationModal";
+import { useStatusPopup } from "@/hooks/useStatusPopup";
 
 export default function KYCDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const [id, setId] = useState<string | null>(null);
@@ -15,6 +15,7 @@ export default function KYCDetailPage({ params }: { params: Promise<{ id: string
     const [uploading, setUploading] = useState(false);
     const [reviewAction, setReviewAction] = useState<"APPROVE" | "REJECT" | null>(null);
     const router = useRouter();
+    const { showError, showSuccess, PopupComponent } = useStatusPopup();
 
     // Form Stats
     const [selectedType, setSelectedType] = useState("AADHAAR_MASKED");
@@ -84,7 +85,7 @@ export default function KYCDetailPage({ params }: { params: Promise<{ id: string
             });
             if (!metaRes.ok) throw new Error("Metadata Save Failed");
 
-            alert("Document Uploaded!");
+            showSuccess("Document Uploaded!");
             setFile(null);
             setDocNumber("");
 
@@ -92,7 +93,7 @@ export default function KYCDetailPage({ params }: { params: Promise<{ id: string
             if (id) fetchProfile(id);
 
         } catch (err: any) {
-            alert(err.message);
+            showError(err.message);
         } finally {
             setUploading(false);
         }
@@ -113,7 +114,7 @@ export default function KYCDetailPage({ params }: { params: Promise<{ id: string
             if (!res.ok) throw new Error("Review Failed");
             if (id) fetchProfile(id);
         } catch (e) {
-            alert("Error processing review");
+            showError("Error processing review");
         } finally {
             setReviewAction(null);
         }
@@ -252,6 +253,7 @@ export default function KYCDetailPage({ params }: { params: Promise<{ id: string
                 confirmText={reviewAction === "APPROVE" ? "Verify & Approve" : "Reject Application"}
                 isDestructive={reviewAction === "REJECT"}
             />
+            <PopupComponent />
         </div>
     );
 }

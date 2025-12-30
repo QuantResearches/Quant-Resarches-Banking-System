@@ -1,16 +1,16 @@
-
 "use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { CheckCircle2 } from "lucide-react";
-
 import ConfirmationModal from "@/components/ui/ConfirmationModal";
+import { useStatusPopup } from "@/hooks/useStatusPopup";
 
 export default function ResolveButton({ alertId }: { alertId: string }) {
     const [loading, setLoading] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const router = useRouter();
+    const { showError, showSuccess, PopupComponent } = useStatusPopup();
 
     const handleResolve = async () => {
         setLoading(true);
@@ -21,10 +21,13 @@ export default function ResolveButton({ alertId }: { alertId: string }) {
 
             if (!res.ok) throw new Error("Failed to resolve");
 
-            router.refresh();
+            showSuccess("Alert resolved successfully");
+            setTimeout(() => {
+                router.refresh();
+            }, 500);
 
         } catch (error: any) {
-            alert("Error: " + error.message);
+            showError("Error: " + error.message);
         } finally {
             setLoading(false);
             setIsModalOpen(false);
@@ -51,6 +54,7 @@ export default function ResolveButton({ alertId }: { alertId: string }) {
                 confirmText="Mark Resolved"
                 isLoading={loading}
             />
+            <PopupComponent />
         </>
     );
 }

@@ -6,10 +6,7 @@
   /* Gray-900 */
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-}
+
 
 /* STRICT NO ANIMATIONS RULE */
 *,

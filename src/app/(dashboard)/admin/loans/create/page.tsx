@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect } from "react";
@@ -9,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/Card";
 import { Label } from "@/components/ui/Label";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
+import { useStatusPopup } from "@/hooks/useStatusPopup";
 
 export default function CreateLoanPage() {
     const router = useRouter();
@@ -16,6 +16,7 @@ export default function CreateLoanPage() {
     const [products, setProducts] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
+    const { showError, showSuccess, PopupComponent } = useStatusPopup();
 
     const [formData, setFormData] = useState({
         customer_id: "",
@@ -55,7 +56,7 @@ export default function CreateLoanPage() {
 
             router.push(`/admin/loans/${data.id}`);
         } catch (err: any) {
-            alert(err.message);
+            showError(err.message);
         } finally {
             setSubmitting(false);
         }
@@ -198,6 +199,7 @@ export default function CreateLoanPage() {
                     </form>
                 </CardContent>
             </Card>
+            <PopupComponent />
         </div>
     );
 }

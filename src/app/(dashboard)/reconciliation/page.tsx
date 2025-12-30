@@ -74,7 +74,7 @@ export default async function ReconciliationPage() {
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 text-right">
-                                            <ReconcileButton />
+                                            <ReconcileButton accountId={stmt.id} />
                                         </td>
                                     </tr>
                                 ))}

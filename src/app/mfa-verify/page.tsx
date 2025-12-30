@@ -6,12 +6,14 @@ import { useSession } from "next-auth/react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { ShieldCheck, Loader2 } from "lucide-react";
+import { useStatusPopup } from "@/hooks/useStatusPopup";
 
 export default function MFAVerifyPage() {
     const [code, setCode] = useState("");
     const [loading, setLoading] = useState(false);
     const router = useRouter();
     const { update } = useSession();
+    const { showError, PopupComponent } = useStatusPopup();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -36,7 +38,7 @@ export default function MFAVerifyPage() {
             router.refresh();
 
         } catch (error: any) {
-            alert(error.message);
+            showError(error.message);
         } finally {
             setLoading(false);
         }
@@ -85,6 +87,7 @@ export default function MFAVerifyPage() {
                     </form>
                 </CardContent>
             </Card>
+            <PopupComponent />
         </div>
     );
 }

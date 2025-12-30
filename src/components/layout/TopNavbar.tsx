@@ -25,10 +25,11 @@ import {
     ChevronDown
 } from "lucide-react";
 import ConfirmationModal from "@/components/ui/ConfirmationModal";
+import NotificationDropdown from "./NotificationDropdown";
 
 export default function TopNavbar() {
     const pathname = usePathname();
-    const { data: session } = useSession();
+    const { data: session, status } = useSession();
     const role = session?.user?.role;
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
@@ -51,10 +52,19 @@ export default function TopNavbar() {
         { name: "Transactions", href: "/transactions", icon: ArrowRightLeft },
         { name: "Loans", href: "/admin/loans", icon: Wallet, roles: ["admin", "finance"] },
         { name: "Approvals", href: "/approvals", icon: CheckCircle, roles: ["admin", "finance"] },
-        { name: "Reports", href: "/reports/profit-loss", icon: FileText },
+        { name: "Reconciliation", href: "/reconciliation", icon: ArrowRightLeft, roles: ["admin", "finance", "auditor"] },
+        { name: "Compliance", href: "/compliance", icon: Shield, roles: ["admin", "compliance"] },
+        { name: "Reports", href: "/reports", icon: FileText },
     ];
 
+    // Persist links during loading to prevent flicker (optimistic) or show skeleton
+    // If status is loading, we might show empty or basic links. 
+    // Better: Show basic links always, restricted links only if confirmed.
+    // To solve "disappearing", we can defer rendering the list until loaded OR render what we can.
+    // If we use 'clsx' to fade in, it might help.
+
     const filteredLinks = links.filter(link => !link.roles || (role && link.roles.includes(role as string)));
+    const isLoading = status === "loading";
 
     return (
         <>
@@ -84,36 +94,50 @@ export default function TopNavbar() {
 
                 {/* 2. Desktop Navigation */}
                 <div className="hidden md:flex items-center gap-1 mx-6 overflow-x-auto no-scrollbar mask-gradient">
-                    {filteredLinks.map((link) => {
-                        const isActive = pathname === link.href || (link.href !== "/dashboard" && pathname.startsWith(link.href));
-                        const Icon = link.icon;
-                        return (
-                            <Link
-                                key={link.href}
-                                href={link.href}
-                                className={clsx(
-                                    "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 border border-transparent",
-                                    isActive
-                                        ? "bg-slate-800 text-white border-slate-700/50 shadow-sm"
-                                        : "text-slate-400 hover:text-slate-100 hover:bg-slate-900"
-                                )}
-                            >
-                                <Icon size={16} />
-                                <span>{link.name}</span>
-                            </Link>
-                        );
-                    })}
+                    {isLoading ? (
+                        /* Simple Skeleton for Links */
+                        <div className="flex gap-2 animate-pulse">
+                            {[1, 2, 3, 4, 5].map(i => (
+                                <div key={i} className="h-9 w-24 bg-slate-900 rounded-md"></div>
+                            ))}
+                        </div>
+                    ) : (
+                        filteredLinks.map((link) => {
+                            const isActive = pathname === link.href || (link.href !== "/dashboard" && pathname.startsWith(link.href));
+                            const Icon = link.icon;
+                            return (
+                                <Link
+                                    key={link.href}
+                                    href={link.href}
+                                    className={clsx(
+                                        "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 border border-transparent whitespace-nowrap",
+                                        isActive
+                                            ? "bg-slate-800 text-white border-slate-700/50 shadow-sm"
+                                            : "text-slate-400 hover:text-slate-100 hover:bg-slate-900"
+                                    )}
+                                >
+                                    <Icon size={16} />
+                                    <span>{link.name}</span>
+                                </Link>
+                            );
+                        })
+                    )}
                 </div>
 
                 {/* 3. Right Actions */}
                 <div className="flex items-center gap-3 ml-auto">
-                    {/* Notifications */}
-                    <div className="relative group">
-                        <button className="text-slate-400 hover:text-white relative p-2 rounded-full hover:bg-slate-900 transition-colors">
-                            <Bell size={18} />
-                            <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border border-slate-950"></span>
-                        </button>
+                    {/* Search Bar (Visual Only for now) */}
+                    <div className="hidden lg:flex items-center relative mr-2">
+                        <Search size={16} className="absolute left-3 text-slate-500" />
+                        <input
+                            type="text"
+                            placeholder="Search..."
+                            className="bg-slate-900 border border-slate-700 text-slate-200 text-sm rounded-full pl-9 pr-4 py-1.5 focus:outline-none focus:border-blue-500 w-64 transition-all"
+                        />
                     </div>
+
+                    {/* Notifications */}
+                    <NotificationDropdown />
 
                     {/* Vertical Divider */}
                     <div className="h-6 w-px bg-slate-800 mx-1"></div>

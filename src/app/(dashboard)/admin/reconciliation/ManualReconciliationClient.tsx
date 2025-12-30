@@ -1,8 +1,8 @@
-
 "use client";
 
 import { useState, useEffect } from "react";
 import { Loader2, CheckCircle, ArrowRightLeft } from "lucide-react";
+import { useStatusPopup } from "@/hooks/useStatusPopup";
 
 export default function ManualReconciliationClient() {
     const [lines, setLines] = useState<any[]>([]);
@@ -12,6 +12,7 @@ export default function ManualReconciliationClient() {
     const [selectedLine, setSelectedLine] = useState<string | null>(null);
     const [selectedEntry, setSelectedEntry] = useState<string | null>(null);
     const [matching, setMatching] = useState(false);
+    const { showError, showSuccess, PopupComponent } = useStatusPopup();
 
     const fetchData = async () => {
         setLoading(true);
@@ -49,9 +50,9 @@ export default function ManualReconciliationClient() {
             setSelectedLine(null);
             setSelectedEntry(null);
 
-            alert("Matched successfully");
+            showSuccess("Matched successfully");
         } catch (err: any) {
-            alert(err.message);
+            showError(err.message);
         } finally {
             setMatching(false);
         }
@@ -129,6 +130,7 @@ export default function ManualReconciliationClient() {
                     </div>
                 </div>
             </div>
+            <PopupComponent />
         </div>
     );
 }

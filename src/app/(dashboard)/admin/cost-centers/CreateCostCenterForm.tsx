@@ -1,16 +1,17 @@
-
 "use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, Loader2 } from "lucide-react";
 import Modal from "@/components/ui/Modal";
+import { useStatusPopup } from "@/hooks/useStatusPopup";
 
 export default function CreateCostCenterForm() {
     const [isOpen, setIsOpen] = useState(false);
     const [loading, setLoading] = useState(false);
     const [formData, setFormData] = useState({ code: "", name: "", description: "" });
     const router = useRouter();
+    const { showError, showSuccess, PopupComponent } = useStatusPopup();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -30,9 +31,10 @@ export default function CreateCostCenterForm() {
             setIsOpen(false);
             setFormData({ code: "", name: "", description: "" });
             router.refresh();
+            showSuccess("Cost Center Created");
 
         } catch (err: any) {
-            alert(err.message);
+            showError(err.message);
         } finally {
             setLoading(false);
         }
@@ -92,6 +94,7 @@ export default function CreateCostCenterForm() {
                     </div>
                 </form>
             </Modal>
+            <PopupComponent />
         </>
     );
 }

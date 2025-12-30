@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Lock, Trash2, Unlock } from "lucide-react";
 import Modal from "@/components/ui/Modal";
+import { useStatusPopup } from "@/hooks/useStatusPopup";
 
 interface Props {
     id: string;
@@ -14,6 +15,7 @@ export default function AccountActions({ id, status }: Props) {
     const router = useRouter();
     const [loading, setLoading] = useState(false);
     const [action, setAction] = useState<"freeze" | "close" | null>(null);
+    const { showError, showSuccess, PopupComponent } = useStatusPopup();
 
     const handleConfirm = async () => {
         if (!action) return;
@@ -24,8 +26,9 @@ export default function AccountActions({ id, status }: Props) {
             if (!res.ok) throw new Error("Failed");
             router.refresh();
             setAction(null);
+            showSuccess(`Account ${action}d successfully`);
         } catch (error) {
-            alert("Action failed. Check console or permissions.");
+            showError("Action failed. Check console or permissions.");
         } finally {
             setLoading(false);
         }
@@ -87,6 +90,7 @@ export default function AccountActions({ id, status }: Props) {
                     </div>
                 </div>
             </Modal>
+            <PopupComponent />
         </>
     );
 }

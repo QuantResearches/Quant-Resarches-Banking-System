@@ -4,12 +4,15 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
+import { useStatusPopup } from "@/hooks/useStatusPopup";
+
 export default function CreatePeriodForm() {
     const [name, setName] = useState("");
     const [startDate, setStartDate] = useState("");
     const [endDate, setEndDate] = useState("");
     const [loading, setLoading] = useState(false);
     const router = useRouter();
+    const { showError, showSuccess, PopupComponent } = useStatusPopup();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -28,10 +31,10 @@ export default function CreatePeriodForm() {
             setName("");
             setStartDate("");
             setEndDate("");
-            alert("Period Created");
+            showSuccess("Period Created");
 
         } catch (error: any) {
-            alert(error.message);
+            showError(error.message);
         } finally {
             setLoading(false);
         }

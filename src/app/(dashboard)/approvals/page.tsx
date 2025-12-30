@@ -75,9 +75,13 @@ export default async function ApprovalsPage() {
                                     </td>
                                     <td className="px-6 py-4">
                                         <span className="bg-amber-100 text-amber-700 px-2 py-0.5 rounded text-xs font-bold">Unverified</span>
+                                        <div className="flex justify-end">
+                                            <ApprovalActions approvalId={profile.id} />
+                                            <KYCApprovalActions kycId={profile.id} customerId={profile.customer.id} />
+                                        </div>
                                     </td>
                                     <td className="px-6 py-4 text-right">
-                                        <KYCApprovalActions id={profile.id} customerId={profile.customer.id} />
+                                        {/* Action column is now empty as KYCApprovalActions moved */}
                                     </td>
                                 </tr>
                             ))}
@@ -126,7 +130,7 @@ export default async function ApprovalsPage() {
                                         {Number(txn.amount).toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}
                                     </td>
                                     <td className="px-6 py-4 text-right">
-                                        <ApprovalActions id={txn.id} />
+                                        <ApprovalActions approvalId={txn.id} />
                                     </td>
                                 </tr>
                             ))}

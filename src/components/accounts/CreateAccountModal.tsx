@@ -84,8 +84,9 @@ export default function CreateAccountModal({ customerId }: CreateAccountModalPro
                         <div className="space-y-2">
                             <Label htmlFor="account_type">Account Type</Label>
                             <Select name="account_type" id="account_type" required>
+                                <option value="savings">Savings Account (Interest Bearing)</option>
+                                <option value="current">Current Account (Business/Frequent)</option>
                                 <option value="wallet">Digital Wallet (Zero Balance)</option>
-                                <option value="prepaid">Prepaid Card Account</option>
                                 <option value="internal">Internal Operating Account</option>
                             </Select>
                             <p className="text-[10px] text-slate-500">

@@ -1,16 +1,16 @@
-
 "use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Lock } from "lucide-react";
-
 import ConfirmationModal from "@/components/ui/ConfirmationModal";
+import { useStatusPopup } from "@/hooks/useStatusPopup";
 
 export default function ClosePeriodButton({ periodId }: { periodId: string }) {
     const [loading, setLoading] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const router = useRouter();
+    const { showError, showSuccess, PopupComponent } = useStatusPopup();
 
     const handleClose = async () => {
         setLoading(true);
@@ -21,10 +21,11 @@ export default function ClosePeriodButton({ periodId }: { periodId: string }) {
 
             if (!res.ok) throw new Error("Failed to close period");
 
+            showSuccess("Period Closed Successfully");
             router.refresh();
 
         } catch (error: any) {
-            alert("Error: " + error.message);
+            showError("Error: " + error.message);
         } finally {
             setLoading(false);
             setIsModalOpen(false);
@@ -52,6 +53,7 @@ export default function ClosePeriodButton({ periodId }: { periodId: string }) {
                 isDestructive={true}
                 isLoading={loading}
             />
+            <PopupComponent />
         </>
     );
 }

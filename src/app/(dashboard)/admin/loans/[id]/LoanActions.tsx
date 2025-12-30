@@ -1,9 +1,8 @@
-
 "use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, CheckCircle, Wallet } from "lucide-react";
+import { CheckCircle, Wallet } from "lucide-react";
 
 interface LoanActionsProps {
     loanId: string;
@@ -11,11 +10,13 @@ interface LoanActionsProps {
 }
 
 import ConfirmationModal from "@/components/ui/ConfirmationModal";
+import { useStatusPopup } from "@/hooks/useStatusPopup";
 
 export default function LoanActions({ loanId, status }: LoanActionsProps) {
     const [loading, setLoading] = useState(false);
     const [pendingAction, setPendingAction] = useState<"approve" | "disburse" | null>(null);
     const router = useRouter();
+    const { showError, showSuccess, PopupComponent } = useStatusPopup();
 
     const handleConfirm = async () => {
         if (!pendingAction) return;
@@ -28,9 +29,9 @@ export default function LoanActions({ loanId, status }: LoanActionsProps) {
             if (!res.ok) throw new Error(data.error);
 
             router.refresh();
-            alert(`Loan ${pendingAction}d successfully!`);
+            showSuccess(`Loan ${pendingAction}d successfully!`);
         } catch (error: any) {
-            alert(error.message);
+            showError(error.message);
         } finally {
             setLoading(false);
             setPendingAction(null);
@@ -83,6 +84,7 @@ export default function LoanActions({ loanId, status }: LoanActionsProps) {
                 confirmText={pendingAction === "approve" ? "Approve" : "Disburse"}
                 isLoading={loading}
             />
+            <PopupComponent />
         </>
     );
 }

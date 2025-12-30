@@ -66,39 +66,17 @@ export async function POST(req: Request) {
         }
 
         const { account_id, txn_type, amount, reference } = transactionSchema.parse(body);
-        // 0. Risk: Velocity Check (Pre-check)
-        const ONE_HOUR = 60 * 60 * 1000;
-        const oneHourAgo = new Date(Date.now() - ONE_HOUR);
-        const recentTxnCount = await prisma.transaction.count({
-            where: {
-                created_by: session.user.id,
-                created_at: { gte: oneHourAgo }
-            }
-        });
 
-        if (recentTxnCount >= 5) {
-            // Optional: Create Risk Alert for blocked attempt?
-            // For now, just Block.
-            return NextResponse.json({ error: "Transaction Limit Exceeded (Velocity Rule: Max 5/hr)" }, { status: 429 });
-        }
-
+        // 2. Validate Amount
         const decimalAmount = new Prisma.Decimal(amount);
-
-        // SECURITY: Hard Limit Check (Bank Policy)
-        if (decimalAmount.toNumber() > 50000) {
-            const { logSecurityEvent } = await import("@/lib/security-logger");
-            await logSecurityEvent(
-                "HIGH_VALUE_TXN",
-                "CRITICAL",
-                `Transaction Limit Exceeded attempt: ${amount}`,
-                session.user.id,
-                req,
-                { amount, currency: "INR" }
-            );
-            return NextResponse.json({ error: "Transaction Limit Exceeded (Max 50,000)" }, { status: 400 });
+        if (decimalAmount.isNegative() || decimalAmount.isZero()) {
+            return NextResponse.json({ error: "Invalid amount" }, { status: 400 });
         }
 
-        // ATOMIC TRANSACTION
+        // REMOVED: Velocity Limit (Max 5/hr)
+        // REMOVED: Amount Limit (Max 50,000)
+
+        // 3. Check Balance (for Debits)TRANSACTION
         const result = await prisma.$transaction(async (tx) => {
             // 1. Lock/Get Account & Balance
             // Note: Prisma doesn't support SELECT FOR UPDATE naturally easily without raw query, 

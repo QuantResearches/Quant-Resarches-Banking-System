@@ -7,26 +7,31 @@ import { RefreshCw } from "lucide-react";
 
 import ConfirmationModal from "@/components/ui/ConfirmationModal";
 
-export default function ReconcileButton() {
+import { useStatusPopup } from "@/hooks/useStatusPopup";
+
+export default function ReconcileButton({ accountId }: { accountId: string }) {
     const [loading, setLoading] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const router = useRouter();
+    const { showError, showSuccess, PopupComponent } = useStatusPopup();
 
     const handleReconcile = async () => {
         setLoading(true);
         try {
-            const res = await fetch("/api/reconciliation/match", {
-                method: "POST"
+            const res = await fetch(`/api/reconciliation/auto-match`, {
+                method: "POST",
+                body: JSON.stringify({ account_id: accountId }),
+                headers: { "Content-Type": "application/json" }
             });
             const data = await res.json();
 
             if (!res.ok) throw new Error(data.error || "Failed to reconcile");
 
-            alert(`Success! Auto-matched ${data.matched} lines.`);
+            showSuccess(`Success! Auto-matched ${data.matched} lines.`);
             router.refresh();
 
         } catch (error: any) {
-            alert("Error: " + error.message);
+            showError("Error: " + error.message);
         } finally {
             setLoading(false);
             setIsModalOpen(false);
@@ -36,18 +41,13 @@ export default function ReconcileButton() {
     return (
         <>
             <button
-                onClick={() => setIsModalOpen(true)}
+                onClick={handleReconcile}
                 disabled={loading}
-                className="text-blue-600 hover:text-blue-800 font-medium text-xs flex items-center gap-1 disabled:opacity-50 disabled:cursor-wait"
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium flex items-center gap-2 disabled:opacity-50"
             >
-                {loading ? "Matching Records..." : (
-                    <>
-                        <RefreshCw size={14} />
-                        Reconcile
-                    </>
-                )}
+                <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
+                {loading ? "Matching..." : "Auto-Reconcile"}
             </button>
-
             <ConfirmationModal
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}

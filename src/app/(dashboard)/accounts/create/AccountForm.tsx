@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { Loader2 } from "lucide-react";
+import { Select } from "@/components/ui/Select";
 
 interface Props {
     customers: { id: string; full_name: string; email: string }[];
@@ -60,11 +62,15 @@ export default function AccountForm({ customers }: Props) {
                 </div>
                 <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Account Type</label>
-                    <select name="account_type" required className="w-full p-2 border border-gray-300 rounded-none focus:border-blue-500 focus:outline-none bg-white">
-                        <option value="wallet">Wallet</option>
-                        <option value="prepaid">Prepaid</option>
-                        <option value="internal">Internal</option>
-                    </select>
+                    <Select
+                        name="account_type"
+                        defaultValue="savings"
+                    >
+                        <option value="savings">Savings Account</option>
+                        <option value="current">Current Account</option>
+                        <option value="wallet">Digital Wallet</option>
+                        <option value="internal">Internal Account</option>
+                    </Select>
                 </div>
 
                 <div className="pt-4 flex gap-3">

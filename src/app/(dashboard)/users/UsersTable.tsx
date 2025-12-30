@@ -13,10 +13,13 @@ interface User {
     last_login_at: Date | null;
 }
 
+import { useStatusPopup } from "@/hooks/useStatusPopup";
+
 export default function UsersTable({ users }: { users: User[] }) {
     const router = useRouter();
     const [loading, setLoading] = useState<string | null>(null); // Restore loading state for API calls
     const [targetUser, setTargetUser] = useState<{ id: string, active: boolean } | null>(null);
+    const { showError, showSuccess, PopupComponent } = useStatusPopup();
 
     const initiateToggle = (id: string, currentStatus: boolean) => {
         if (!currentStatus) return; // Only disabling supported per spec
@@ -29,8 +32,13 @@ export default function UsersTable({ users }: { users: User[] }) {
         setLoading(targetUser.id);
         try {
             const res = await fetch(`/api/users/${targetUser.id}/disable`, { method: "POST" });
-            if (!res.ok) alert("Failed to disable user");
-            else router.refresh();
+            if (!res.ok) showError("Failed to disable user");
+            else {
+                showSuccess("User disabled successfully");
+                router.refresh();
+            }
+        } catch (e) {
+            showError("An error occurred");
         } finally {
             setLoading(null);
             setTargetUser(null);
@@ -39,6 +47,7 @@ export default function UsersTable({ users }: { users: User[] }) {
 
     return (
         <div className="bg-white border border-gray-200 overflow-x-auto">
+            <PopupComponent />
             <table className="w-full text-sm text-left">
                 <thead className="bg-gray-50 text-gray-700 font-medium uppercase border-b border-gray-200">
                     <tr>

@@ -38,8 +38,8 @@ export default async function TransactionDetailPage(props: { params: Promise<{ i
                 <div className="flex items-center gap-3">
                     <ReverseAction
                         transactionId={transaction.id}
-                        status={transaction.status}
-                        isReversed={!!transaction.reversed_by}
+                        currentStatus={transaction.status}
+
                     />
                     <span className={`px-3 py-1 text-sm font-bold uppercase rounded-full ${transaction.status === 'POSTED' ? 'bg-green-100 text-green-800' :
                         transaction.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :

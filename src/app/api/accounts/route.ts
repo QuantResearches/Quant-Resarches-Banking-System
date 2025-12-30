@@ -6,7 +6,7 @@ import { authOptions } from "@/lib/auth";
 
 const accountCreateSchema = z.object({
     customer_id: z.string().uuid(),
-    account_type: z.enum(["wallet", "prepaid", "internal"]),
+    account_type: z.enum(["savings", "current", "wallet", "internal"]),
 });
 
 export async function GET(req: Request) {
