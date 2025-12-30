@@ -1,10 +1,13 @@
 "use client";
 
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Shield, Smartphone, Key, History, AlertTriangle } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import Link from "next/link";
+import ConfirmationModal from "@/components/ui/ConfirmationModal";
 import {
     Table,
     TableBody,
@@ -28,6 +31,29 @@ interface SecurityTabProps {
 }
 
 export default function SecurityTab({ user, loginHistory }: SecurityTabProps) {
+    const router = useRouter();
+    const [isDisabling, setIsDisabling] = useState(false);
+    const [showDisableConfirm, setShowDisableConfirm] = useState(false);
+
+    const handleDisableClick = () => {
+        setShowDisableConfirm(true);
+    };
+
+    const confirmDisableMFA = async () => {
+        setShowDisableConfirm(false);
+        setIsDisabling(true);
+        try {
+            const res = await fetch("/api/auth/mfa/disable", { method: "POST" });
+            if (!res.ok) throw new Error("Failed to disable MFA");
+            router.refresh();
+        } catch (error) {
+            console.error(error);
+            alert("Failed to disable 2FA. Please try again.");
+        } finally {
+            setIsDisabling(false);
+        }
+    };
+
     return (
         <div className="space-y-6">
             {/* MFA Section */}
@@ -58,9 +84,20 @@ export default function SecurityTab({ user, loginHistory }: SecurityTabProps) {
                         </div>
 
                         {user.mfa_enabled ? (
-                            <Badge className="bg-green-100 text-green-700 hover:bg-green-200 border-green-200">
-                                Enabled
-                            </Badge>
+                            <div className="flex items-center gap-3">
+                                <Badge className="bg-green-100 text-green-700 hover:bg-green-200 border-green-200">
+                                    Enabled
+                                </Badge>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={handleDisableClick} // Use new handler
+                                    disabled={isDisabling}
+                                    className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
+                                >
+                                    {isDisabling ? "Disabling..." : "Disable 2FA"}
+                                </Button>
+                            </div>
                         ) : (
                             <Button asChild size="sm">
                                 <Link href="/auth/mfa/setup">Enable 2FA</Link>
@@ -73,6 +110,7 @@ export default function SecurityTab({ user, loginHistory }: SecurityTabProps) {
             {/* Login History */}
             <Card>
                 <CardHeader>
+                    {/* ... existing history header ... */}
                     <CardTitle className="text-lg flex items-center gap-2">
                         <History className="w-5 h-5 text-slate-500" />
                         Recent Session Activity
@@ -82,8 +120,10 @@ export default function SecurityTab({ user, loginHistory }: SecurityTabProps) {
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
+                    {/* ... existing table ... */}
                     <div className="rounded-md border border-slate-200 overflow-hidden">
                         <Table>
+                            {/* ... table content ... */}
                             <TableHeader className="bg-slate-50">
                                 <TableRow>
                                     <TableHead>Event</TableHead>
@@ -136,6 +176,17 @@ export default function SecurityTab({ user, loginHistory }: SecurityTabProps) {
                     </div>
                 </CardContent>
             </Card>
+
+            <ConfirmationModal
+                isOpen={showDisableConfirm}
+                onClose={() => setShowDisableConfirm(false)}
+                onConfirm={confirmDisableMFA}
+                title="Disable 2FA?"
+                message="Are you sure you want to disable Two-Factor Authentication? Your account will be less secure."
+                confirmText="Disable 2FA"
+                isDestructive={true}
+                isLoading={isDisabling}
+            />
         </div>
     );
 }

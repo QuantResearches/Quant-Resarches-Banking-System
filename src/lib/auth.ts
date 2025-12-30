@@ -26,12 +26,10 @@ export const authOptions: NextAuthOptions = {
                 password: { label: "Password", type: "password" },
             },
             async authorize(credentials, req) {
-                console.log("[AUTH_DEBUG] Authorize Called");
                 if (!credentials) return null;
 
                 try {
                     const { email, password } = loginSchema.parse(credentials);
-                    console.log(`[AUTH_DEBUG] Attempting: ${email}`);
 
                     // 1. Check for Brute Force
                     // const recentFailures = await prisma.failedLoginAttempt.count({ ... }); 
@@ -43,18 +41,15 @@ export const authOptions: NextAuthOptions = {
                     });
 
                     if (!user) {
-                        console.log("[AUTH_DEBUG] User not found");
                         return null;
                     }
 
                     if (!user.is_active) {
-                        console.log("[AUTH_DEBUG] User inactive");
                         return null;
                     }
 
                     // 3. Verify Password
                     const isValid = await bcrypt.compare(password, user.password_hash);
-                    console.log(`[AUTH_DEBUG] Password Valid: ${isValid}`);
 
                     if (!isValid) {
                         await prisma.failedLoginAttempt.create({
@@ -105,6 +100,7 @@ export const authOptions: NextAuthOptions = {
                         role: user.role,
                         sessionId: session.id,
                         mfa_enabled: user.mfa_enabled,
+                        is_mfa_verified: mfaVerified,
                     };
 
                 } catch (error) {
@@ -120,11 +116,18 @@ export const authOptions: NextAuthOptions = {
                 token.id = user.id;
                 token.role = user.role;
                 // @ts-ignore
+                // @ts-ignore
                 token.sessionId = user.sessionId;
                 // @ts-ignore
                 token.mfa_enabled = user.mfa_enabled;
+                // @ts-ignore
+                token.is_mfa_verified = user.is_mfa_verified; // Init from user object
             }
+
+            console.log(`[AUTH_DEBUG] JWT Callback. Trigger: ${trigger}, MFA Verified: ${token.is_mfa_verified}`);
+
             if (trigger === "update" && session?.is_mfa_verified) {
+                console.log("[AUTH_DEBUG] Updating JWT MFA status to TRUE");
                 token.is_mfa_verified = true;
             }
             return token;

@@ -24,10 +24,8 @@ export async function POST(req: Request) {
             select: { mfa_secret: true, mfa_enabled: true }
         });
 
-        if (!user || !user.mfa_enabled || !user.mfa_secret) {
-            // Should not happen if logic is correct, but safe fallback
-            // If user has NO MFA, just approve.
-            return NextResponse.json({ success: true });
+        if (!user || !user.mfa_secret) {
+            return NextResponse.json({ error: "MFA setup not initiated" }, { status: 400 });
         }
 
         const isValid = verifyMFAToken(code, user.mfa_secret);
@@ -35,6 +33,12 @@ export async function POST(req: Request) {
         if (!isValid) {
             return NextResponse.json({ error: "Invalid authenticator code" }, { status: 400 });
         }
+
+        // CRITICAL FIX: Enable MFA for the user permanently
+        await prisma.user.update({
+            where: { id: session.user.id },
+            data: { mfa_enabled: true } as any
+        });
 
         // Update Session in DB
         // @ts-ignore

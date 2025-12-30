@@ -166,10 +166,7 @@ export default function TopNavbar() {
                                             <User size={14} className="text-slate-500" />
                                             My Profile
                                         </Link>
-                                        <Link href="/settings" className="flex items-center gap-3 px-3 py-2 text-xs font-medium text-slate-400 hover:bg-slate-900 hover:text-white rounded-md transition-colors">
-                                            <Shield size={14} className="text-slate-500" />
-                                            Security Settings
-                                        </Link>
+
                                     </div>
                                     <div className="border-t border-slate-800 p-1 mt-1">
                                         <button

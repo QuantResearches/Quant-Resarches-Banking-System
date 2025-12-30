@@ -33,9 +33,11 @@ export default function MFAVerifyPage() {
             }
 
             // Success: Update session to reflect new verified state
-            await update();
-            router.push("/dashboard");
-            router.refresh();
+            // Success: Update session to reflect new verified state
+            await update({ is_mfa_verified: true });
+
+            // Force hard navigation to ensure session cookie is re-read by server
+            window.location.href = "/dashboard";
 
         } catch (error: any) {
             showError(error.message);
@@ -68,6 +70,8 @@ export default function MFAVerifyPage() {
                                 placeholder="000000"
                                 required
                                 autoFocus
+                                autoComplete="off"
+                                suppressHydrationWarning
                             />
                         </div>
                         <Button
@@ -85,6 +89,19 @@ export default function MFAVerifyPage() {
                             )}
                         </Button>
                     </form>
+                    <div className="mt-6 text-center">
+                        <button
+                            onClick={() => {
+                                // Hard reload to clear client state after signout
+                                import("next-auth/react").then(({ signOut }) => {
+                                    signOut({ callbackUrl: "/login" });
+                                });
+                            }}
+                            className="text-sm text-slate-500 hover:text-slate-700 hover:underline"
+                        >
+                            Back to Login (Sign Out)
+                        </button>
+                    </div>
                 </CardContent>
             </Card>
             <PopupComponent />

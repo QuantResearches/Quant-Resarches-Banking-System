@@ -6,6 +6,8 @@ declare module "next-auth" {
         user: {
             id: string
             role: Role
+            mfa_enabled?: boolean
+            is_mfa_verified?: boolean
         } & DefaultSession["user"]
     }
 
@@ -13,6 +15,8 @@ declare module "next-auth" {
         id: string
         role: Role
         sessionId?: string
+        mfa_enabled?: boolean;
+        is_mfa_verified?: boolean;
     }
 }
 
@@ -21,5 +25,7 @@ declare module "next-auth/jwt" {
         id: string
         role: Role
         sessionId?: string
+        mfa_enabled?: boolean;
+        is_mfa_verified?: boolean;
     }
 }
