@@ -75,12 +75,16 @@ export const authOptions: NextAuthOptions = {
                 }
 
                 // 3. Create Session
+                const mfaVerified = !user.mfa_enabled; // If MFA not enabled, it's verified by default. If enabled, false.
+
                 const session = await prisma.session.create({
                     data: {
                         user_id: user.id,
                         expires_at: new Date(Date.now() + 8 * 60 * 60 * 1000), // 8 hours
                         ip_address: req.headers?.['x-forwarded-for'] as string || 'unknown',
                         user_agent: req.headers?.['user-agent'] as string || 'unknown',
+                        // @ts-ignore
+                        is_mfa_verified: mfaVerified
                     },
                 });
 
@@ -107,17 +111,24 @@ export const authOptions: NextAuthOptions = {
                     email: user.email,
                     role: user.role,
                     sessionId: session.id, // Custom field to pass to JWT
+                    mfa_enabled: user.mfa_enabled,
                 };
             },
         }),
     ],
     callbacks: {
-        async jwt({ token, user }) {
+        async jwt({ token, user, trigger, session }) {
             if (user) {
                 token.id = user.id;
                 token.role = user.role;
                 // @ts-ignore
                 token.sessionId = user.sessionId;
+                // @ts-ignore
+                token.mfa_enabled = user.mfa_enabled;
+            }
+            // Trigger update if we just verified MFA in the client and called update()
+            if (trigger === "update" && session?.is_mfa_verified) {
+                token.is_mfa_verified = true;
             }
             return token;
         },
@@ -130,7 +141,6 @@ export const authOptions: NextAuthOptions = {
 
                 if (!dbSession || dbSession.expires_at < new Date()) {
                     // If session invalid/expired in DB, force logout (return empty/null session effectively)
-                    // NextAuth doesn't let us throw here easily to clear cookie, but returning empty breaks access.
                     return { ...session, user: undefined } as any;
                 }
 
@@ -155,7 +165,10 @@ export const authOptions: NextAuthOptions = {
                 session.user.id = token.id as string;
                 session.user.role = token.role as Role;
                 session.user.email = (token.email || session.user.email) as string;
-                // session.user.name is not strictly needed if we don't use it, but safe to leave omitted
+                // @ts-ignore
+                session.user.mfa_enabled = token.mfa_enabled;
+                // @ts-ignore
+                session.user.is_mfa_verified = dbSession.is_mfa_verified;
             }
             return session;
         },

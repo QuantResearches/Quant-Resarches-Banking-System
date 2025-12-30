@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { formatCurrency } from '@/lib/utils';
 
 export default function CustomerCharts({ id }: { id: string }) {
     const [data, setData] = useState<any>(null);
@@ -36,15 +37,15 @@ export default function CustomerCharts({ id }: { id: string }) {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                 <div className="p-4 bg-green-50 text-green-700 rounded border border-green-100">
                     <div className="text-xs uppercase font-bold text-green-500 mb-1">Total Credited</div>
-                    <div className="text-xl font-mono">${data[0].value.toLocaleString()}</div>
+                    <div className="text-xl font-mono">{formatCurrency(data[0].value)}</div>
                 </div>
                 <div className="p-4 bg-red-50 text-red-700 rounded border border-red-100">
                     <div className="text-xs uppercase font-bold text-red-500 mb-1">Total Debited</div>
-                    <div className="text-xl font-mono">${data[1].value.toLocaleString()}</div>
+                    <div className="text-xl font-mono">{formatCurrency(data[1].value)}</div>
                 </div>
                 <div className="p-4 bg-blue-50 text-blue-700 rounded border border-blue-100">
                     <div className="text-xs uppercase font-bold text-blue-500 mb-1">Net Position</div>
-                    <div className="text-xl font-mono">${data[2].value.toLocaleString()}</div>
+                    <div className="text-xl font-mono">{formatCurrency(data[2].value)}</div>
                 </div>
             </div>
         </div>

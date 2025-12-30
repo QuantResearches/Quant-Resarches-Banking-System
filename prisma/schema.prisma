@@ -96,6 +96,7 @@ model Session {
   last_activity_at DateTime @default(now())
   ip_address       String?
   user_agent       String?
+  is_mfa_verified  Boolean  @default(false)
 
   user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
@@ -319,7 +320,7 @@ model StatementLine {
   statement_id   String
   date           DateTime
   amount         Decimal     @db.Decimal(15, 2)
-  currency       String      @default("USD")
+  currency       String      @default("INR")
   description    String
   reference      String?
   status         LineStatus  @default(unmatched)

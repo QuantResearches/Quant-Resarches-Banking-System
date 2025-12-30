@@ -8,8 +8,7 @@ const Card = React.forwardRef<
     <div
         ref={ref}
         className={cn(
-            "rounded-xl border border-slate-200 bg-white text-slate-950 shadow-sm", // Modern soft border + subtle shadow (which is flattened in globals.css per 'no shadow' rule, but we keep the class for layout logic if needed, or rely on border)
-            // Actually, relying on border-slate-200 is safer for the "calm" look.
+            "rounded-lg border border-slate-200 bg-white text-slate-950 shadow-sm", // Enterprise: rounded-lg, subtle shadow, clean border
             className
         )}
         {...props}

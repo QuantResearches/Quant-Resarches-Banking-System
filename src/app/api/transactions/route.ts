@@ -93,7 +93,7 @@ export async function POST(req: Request) {
                 `Transaction Limit Exceeded attempt: ${amount}`,
                 session.user.id,
                 req,
-                { amount, currency: "USD" }
+                { amount, currency: "INR" }
             );
             return NextResponse.json({ error: "Transaction Limit Exceeded (Max 50,000)" }, { status: 400 });
         }

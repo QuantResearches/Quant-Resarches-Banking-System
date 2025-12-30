@@ -23,7 +23,7 @@ export default function AccountCharts({ id }: { id: string }) {
                     <AreaChart data={data}>
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
                         <XAxis dataKey="date" tick={{ fontSize: 10 }} stroke="#9CA3AF" />
-                        <YAxis tick={{ fontSize: 12 }} stroke="#9CA3AF" />
+                        <YAxis tick={{ fontSize: 12 }} stroke="#9CA3AF" tickFormatter={(value) => `₹${value}`} />
                         <Tooltip contentStyle={{ background: '#fff', border: '1px solid #e5e7eb' }} />
                         <Area type="monotone" dataKey="balance" stroke="#2563EB" fill="#EFF6FF" strokeWidth={2} />
                     </AreaChart>

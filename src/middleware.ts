@@ -13,6 +13,32 @@ export default withAuth(
 
         const role = token.role;
 
+        // MFA Enforcement
+        // @ts-ignore
+        if (token.mfa_enabled && token.sessionId) {
+            // We need to check if verification is done. 
+            // Ideally we check token.is_mfa_verified, but that is only available if we sync it.
+            // We added logic in jwt callback to sync it.
+            // But wait, the Session callback has the DB truth. Middleware only sees Token.
+            // We must ensure Token has is_mfa_verified? 
+            // Actually, middleware runs before session callback. Token is the JWT cookie.
+            // If we rely on DB session, we might need a db call? No, generic middleware shouldn't do DB.
+            // Solution: When MFA is verified in API, we update DB session. 
+            // AND we must force client to update-session which updates Token.
+            // In middleware, if we don't see is_mfa_verified in token, we might redirect.
+            // But initial login token won't have it? 
+            // Initial login: jwt callback sees `mfa_enabled`.
+            // If `mfa_enabled` is true, we must assume UNVERIFIED unless token says otherwise.
+            // So: if (token.mfa_enabled && !token.is_mfa_verified) -> Redirect.
+            // EXCEPTION: /mfa-verify page and API.
+
+            // @ts-ignore
+            if (!token.is_mfa_verified && !path.startsWith("/mfa-verify") && !path.startsWith("/api/auth/mfa")) {
+                return NextResponse.redirect(new URL("/mfa-verify", req.url));
+            }
+        }
+
+
         // Admin Only Routes
         if (path.startsWith("/api/users") || path.startsWith("/api/audit-logs") || path.startsWith("/audit")) {
             if (role !== "admin") {
