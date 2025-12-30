@@ -10,6 +10,7 @@ import QuickActions from "@/components/dashboard/QuickActions";
 export const dynamic = 'force-dynamic';
 
 async function getStats() {
+    // 1. Core Metrics
     const [customerCount, accountCount, transactionCount] = await Promise.all([
         prisma.customer.count({ where: { status: "active" } }),
         prisma.account.count({ where: { status: "active" } }),
@@ -21,7 +22,34 @@ async function getStats() {
             },
         }),
     ]);
-    return { customerCount, accountCount, transactionCount };
+
+    // 2. Health & Risk Metrics
+    const [riskAlerts, kycPending, loansPending, lastReconciliation, failedLogins24h] = await Promise.all([
+        prisma.riskAlert.count({ where: { status: "open" } }),
+        prisma.customerProfile.count({ where: { kyc_status: "PENDING_VERIFICATION" } }),
+        prisma.loan.count({ where: { status: "APPLIED" } }),
+        prisma.reconciliation.findFirst({ orderBy: { matched_at: 'desc' }, select: { matched_at: true } }),
+        prisma.failedLoginAttempt.count({ where: { attempted_at: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) } } })
+    ]);
+
+    const pendingCount = riskAlerts + kycPending + loansPending;
+
+    // Determine Security Status
+    // If more than 10 failed logins in 24h, we flag potential brute force or attack
+    const securityStatus: "secure" | "at_risk" | "breached" = failedLogins24h > 10 ? "at_risk" : "secure";
+
+    return {
+        customerCount,
+        accountCount,
+        transactionCount,
+        healthStats: {
+            uptime_percentage: 100, // Hardcoded for now, or could measure against "server_start_time" in memory if we had it
+            security_status: securityStatus,
+            mfa_enabled_count: 0, // Placeholder
+            last_reconciled: lastReconciliation?.matched_at || null,
+            pending_actions: pendingCount
+        }
+    };
 }
 
 export default async function DashboardPage() {
@@ -37,9 +65,6 @@ export default async function DashboardPage() {
                     <p className="text-sm text-slate-500 mt-1">Operational metrics and system health monitoring.</p>
                 </div>
                 <div className="flex items-center gap-2">
-                    <span className="px-3 py-1 bg-blue-50 text-blue-700 text-xs font-medium rounded-full border border-blue-100">
-                        v2.4.0-Enterprise
-                    </span>
                     <span className="text-xs text-slate-400 font-mono">
                         {new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
                     </span>
@@ -51,7 +76,7 @@ export default async function DashboardPage() {
                 <div className="flex items-center justify-between mb-4">
                     <h2 className="text-sm font-semibold text-slate-900 uppercase tracking-wider">System Status</h2>
                 </div>
-                <SystemHealth />
+                <SystemHealth stats={stats.healthStats} />
             </section>
 
             {/* Metrics Grid */}

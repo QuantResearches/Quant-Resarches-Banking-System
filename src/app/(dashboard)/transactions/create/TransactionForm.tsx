@@ -2,6 +2,11 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { Loader2, FileText, CheckCircle2 } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/Card";
+import { Label } from "@/components/ui/Label";
+import { Input } from "@/components/ui/Input";
+import { Button } from "@/components/ui/Button";
 
 interface Props {
     accounts: any[];
@@ -53,48 +58,96 @@ export default function TransactionForm({ accounts }: Props) {
     };
 
     return (
-        <div className="bg-white border border-gray-200 p-6">
-            {error && <div className="mb-4 p-3 bg-red-50 text-red-700 text-sm border border-red-200">{error}</div>}
-
-            <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Account</label>
-                    <select name="account_id" required className="w-full p-2 border border-gray-300 rounded-none focus:border-blue-500 focus:outline-none bg-white font-mono text-sm">
-                        <option value="">Select an Account</option>
-                        {accounts.map(a => (
-                            <option key={a.id} value={a.id}>
-                                {a.customer.full_name} | {a.account_type} | Bal: {Number(a.balance?.balance || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                            </option>
-                        ))}
-                    </select>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
-                        <select name="txn_type" required className="w-full p-2 border border-gray-300 rounded-none focus:border-blue-500 focus:outline-none bg-white">
-                            <option value="credit">Credit (Deposit)</option>
-                            <option value="debit">Debit (Withdrawal)</option>
-                        </select>
+        <Card className="border-slate-200 shadow-sm max-w-2xl mx-auto">
+            <CardContent className="p-6">
+                <div className="flex items-center gap-2 mb-6 text-slate-900">
+                    <div className="p-2 bg-blue-100 text-blue-600 rounded-lg">
+                        <FileText size={20} />
                     </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Amount</label>
-                        <input name="amount" type="number" step="0.01" min="0.01" required className="w-full p-2 border border-gray-300 rounded-none focus:border-blue-500 focus:outline-none" />
-                    </div>
-                </div>
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Reference</label>
-                    <input name="reference" className="w-full p-2 border border-gray-300 rounded-none focus:border-blue-500 focus:outline-none" placeholder="e.g. INV-12345" />
+                    <h2 className="text-lg font-semibold">Record New Transaction</h2>
                 </div>
 
-                <div className="pt-4 flex gap-3">
-                    <button disabled={loading} type="submit" className="px-4 py-2 bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 disabled:opacity-50 rounded-none">
-                        {loading ? "Processing..." : "Submit Transaction"}
-                    </button>
-                    <button disabled={loading} type="button" onClick={() => router.back()} className="px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium hover:bg-gray-200 rounded-none">
-                        Cancel
-                    </button>
-                </div>
-            </form>
-        </div>
+                {error && (
+                    <div className="mb-6 p-4 bg-red-50 text-red-700 text-sm border border-red-200 rounded-md flex items-center gap-2">
+                        <span className="font-medium">Error:</span> {error}
+                    </div>
+                )}
+
+                <form onSubmit={handleSubmit} className="space-y-6">
+                    <div className="space-y-2">
+                        <Label>Select Account</Label>
+                        <div className="relative">
+                            <select
+                                name="account_id"
+                                required
+                                className="w-full p-2.5 bg-white border border-slate-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none appearance-none font-medium text-slate-700"
+                            >
+                                <option value="">-- Choose Account --</option>
+                                {accounts.map(a => (
+                                    <option key={a.id} value={a.id}>
+                                        {a.customer.full_name} • {a.account_type.toUpperCase()} • ₹{Number(a.balance?.balance || 0).toLocaleString()}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                            <Label>Transaction Type</Label>
+                            <div className="relative">
+                                <select
+                                    name="txn_type"
+                                    required
+                                    className="w-full p-2.5 bg-white border border-slate-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none appearance-none font-medium text-slate-700"
+                                >
+                                    <option value="credit">Credit (Deposit)</option>
+                                    <option value="debit">Debit (Withdrawal)</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Amount (₹)</Label>
+                            <Input
+                                name="amount"
+                                type="number"
+                                step="0.01"
+                                min="0.01"
+                                required
+                                placeholder="0.00"
+                                className="font-mono"
+                            />
+                        </div>
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label>Reference / Description</Label>
+                        <Input
+                            name="reference"
+                            placeholder="e.g. INV-2023-001 or Cash Deposit"
+                        />
+                    </div>
+
+                    <div className="pt-4 flex justify-end gap-3">
+                        <Button
+                            type="button"
+                            variant="secondary"
+                            onClick={() => router.back()}
+                            disabled={loading}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            type="submit"
+                            disabled={loading}
+                            className="bg-blue-600 hover:bg-blue-700 min-w-[150px]"
+                        >
+                            {loading ? <Loader2 size={16} className="animate-spin mr-2" /> : <CheckCircle2 size={16} className="mr-2" />}
+                            {loading ? "Processing..." : "Submit Transaction"}
+                        </Button>
+                    </div>
+                </form>
+            </CardContent>
+        </Card>
     );
 }

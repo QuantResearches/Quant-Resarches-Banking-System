@@ -1,158 +1,113 @@
-
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { z } from "zod";
-// @ts-ignore
-import { LoanStatus, RepaymentStatus, TransactionStatus, TransactionChannel, Prisma } from "@prisma/client";
-import { checkIdempotency, saveIdempotency } from "@/lib/idempotency";
 
-const repaymentSchema = z.object({
-    amount: z.number().positive(),
-    repayment_id: z.string().uuid().optional(), // If paying a specific schedule
-});
-
-export async function POST(req: Request, props: { params: Promise<{ id: string }> }) {
-    const params = await props.params;
+export async function POST(
+    req: Request,
+    { params }: { params: { id: string } }
+) {
     const session = await getServerSession(authOptions);
     if (!session || (session.user.role !== "admin" && session.user.role !== "finance")) {
-        // Ideally customers can repay too, but starting with Admin-led repayment for MVP.
-        return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { id } = params;
-
-    const savedResponse = await checkIdempotency(req);
-    if (savedResponse) return savedResponse;
-
     try {
+        const { id } = params;
         const body = await req.json();
-        const { amount, repayment_id } = repaymentSchema.parse(body);
-        const paymentAmount = new Prisma.Decimal(amount);
+        const { amount } = body;
 
-        const result = await prisma.$transaction(async (tx) => {
-            // 1. Fetch Loan
-            // @ts-ignore
-            const loan = await tx.loan.findUnique({
-                where: { id },
-                include: { customer: { include: { accounts: true } } }
-            });
+        if (!amount || amount <= 0) {
+            return NextResponse.json({ error: "Invalid amount" }, { status: 400 });
+        }
 
-            if (!loan) throw new Error("Loan not found");
-            // @ts-ignore
-            if (loan.status !== LoanStatus.ACTIVE && loan.status !== LoanStatus.DEFAULTED) {
-                throw new Error("Loan is not active");
-            }
-
-            // 2. Identify Source Account (Customer Wallet)
-            const sourceAccount = loan.customer.accounts[0];
-            if (!sourceAccount) throw new Error("Customer has no active accounts");
-
-            // 3. Check Balance
-            const currentBalanceObj = await tx.accountBalance.findUnique({ where: { account_id: sourceAccount.id } });
-            const currentBalance = currentBalanceObj?.balance || new Prisma.Decimal(0);
-
-            if (currentBalance.lessThan(paymentAmount)) {
-                throw new Error("Insufficient funds in customer account");
-            }
-
-            // 4. Create Transaction (Repayment)
-            const txn = await tx.transaction.create({
-                data: {
-                    account_id: sourceAccount.id,
-                    txn_type: "debit", // Money Leaving Customer
-                    amount: paymentAmount,
-                    // @ts-ignore
-                    status: TransactionStatus.POSTED,
-                    // @ts-ignore
-                    channel: TransactionChannel.SYSTEM,
-                    description: `Loan Repayment: ${loan.id.slice(0, 8)}`,
-                    reference: `PAY-${loan.id.slice(0, 8)}-${Date.now().toString().slice(-4)}`,
-                    created_by: session.user.id,
-                    effective_date: new Date()
-                } as any
-            });
-
-            // 5. Update Balance
-            const newBalance = currentBalance.minus(paymentAmount);
-            await tx.accountBalance.update({
-                where: { account_id: sourceAccount.id },
-                data: { balance: newBalance }
-            });
-
-            // 6. Allocate Payment (Waterfall)
-            // Strategy: Close oldest pending schedules first.
-            // @ts-ignore
-            const pendingSchedules = await tx.loanRepayment.findMany({
-                where: { loan_id: id, status: { not: RepaymentStatus.PAID } },
-                orderBy: { due_date: 'asc' }
-            });
-
-            let remainingPayment = Number(paymentAmount);
-
-            for (const schedule of pendingSchedules) {
-                if (remainingPayment <= 0) break;
-
-                const amountDue = Number(schedule.amount_due) - Number(schedule.amount_paid);
-
-                if (remainingPayment >= amountDue) {
-                    // Full Payment of this schedule
-                    // @ts-ignore
-                    await tx.loanRepayment.update({
-                        where: { id: schedule.id },
-                        data: {
-                            amount_paid: schedule.amount_due,
-                            // @ts-ignore
-                            status: RepaymentStatus.PAID,
-                            paid_at: new Date()
-                        }
-                    });
-                    remainingPayment -= amountDue;
-                } else {
-                    // Partial Payment
-                    // @ts-ignore
-                    await tx.loanRepayment.update({
-                        where: { id: schedule.id },
-                        data: {
-                            amount_paid: { increment: remainingPayment },
-                            // @ts-ignore
-                            status: RepaymentStatus.PARTIAL
-                        }
-                    });
-                    remainingPayment = 0;
+        // 1. Fetch Loan & Customer Account
+        const loan = await prisma.loan.findUnique({
+            where: { id },
+            include: {
+                repayments: {
+                    where: { status: { in: ["PENDING", "PARTIAL", "OVERDUE"] } },
+                    orderBy: { due_date: "asc" }
+                },
+                customer: {
+                    include: { accounts: { where: { account_type: "wallet", status: "active" } } }
                 }
             }
-
-            // 7. Check if Loan Completed?
-            // (If all schedules PAID, mark Loan CLOSED).
-            // For MVP, simplistic check.
-            // @ts-ignore
-            const unPaidCount = await tx.loanRepayment.count({
-                where: { loan_id: id, status: { not: RepaymentStatus.PAID } }
-            });
-
-            if (unPaidCount === 0) {
-                // @ts-ignore
-                await tx.loan.update({
-                    where: { id },
-                    // @ts-ignore
-                    data: { status: LoanStatus.CLOSED, closed_at: new Date() }
-                });
-            }
-
-            // 8. GL Entries (Dr Deposits, Cr Cash/Loan Asset)
-            // Skipping detailed GL split (Dr Customer Deposits, Cr Loan Account Asset) for brevity, but crucial in Prod.
-            // Assuming "Loan Account" tracking via `loans` table sufficient for operational view.
-
-            return txn;
         });
 
-        await saveIdempotency(req, result, 200);
+        if (!loan) return NextResponse.json({ error: "Loan not found" }, { status: 404 });
+        const wallet = loan.customer.accounts[0];
+        if (!wallet) return NextResponse.json({ error: "No active wallet to repay from" }, { status: 400 });
+
+        // Check Balance
+        const walletBalance = await prisma.accountBalance.findUnique({ where: { account_id: wallet.id } });
+        if (!walletBalance || Number(walletBalance.balance) < amount) {
+            return NextResponse.json({ error: "Insufficient wallet balance" }, { status: 400 });
+        }
+
+        // 2. Execute Repayment (Atomically)
+        const result = await prisma.$transaction(async (tx) => {
+            // A. Debit Wallet
+            await tx.transaction.create({
+                data: {
+                    account_id: wallet.id,
+                    txn_type: "debit",
+                    amount: amount,
+                    reference: `LOAN-REPAY-${id.slice(0, 8)}`,
+                    description: `Repayment for Loan ${loan.product_id ? "" : ""}`,
+                    status: "POSTED",
+                    channel: "SYSTEM",
+                    created_by: session.user.id
+                }
+            });
+
+            await tx.accountBalance.update({
+                where: { account_id: wallet.id },
+                data: { balance: { decrement: amount } }
+            });
+
+            // B. Waterfall Logic (Distribute amount to repayments)
+            let remaining = amount;
+
+            for (const repayment of loan.repayments) {
+                if (remaining <= 0) break;
+
+                const due = Number(repayment.amount_due) - Number(repayment.amount_paid);
+                const pay = Math.min(remaining, due);
+
+                await tx.loanRepayment.update({
+                    where: { id: repayment.id },
+                    data: {
+                        amount_paid: { increment: pay },
+                        status: (Number(repayment.amount_paid) + pay) >= Number(repayment.amount_due) ? "PAID" : "PARTIAL",
+                        paid_at: new Date()
+                    }
+                });
+
+                remaining -= pay;
+            }
+
+            // C. Update Loan Status if fully paid? (Not implementing full closure logic yet for MVP, just payment)
+
+            // D. Audit
+            await tx.auditLog.create({
+                data: {
+                    user_id: session.user.id,
+                    action: "LOAN_REPAYMENT",
+                    entity_type: "LOAN",
+                    entity_id: id,
+                    details: `Repayment of ${amount} collected from wallet ${wallet.id}`,
+                    ip_address: "127.0.0.1"
+                }
+            });
+
+            return { success: true, remaining };
+        });
+
         return NextResponse.json(result);
 
-    } catch (error: any) {
-        await saveIdempotency(req, { error: error.message }, 500);
-        return NextResponse.json({ error: error.message || "Internal Server Error" }, { status: 500 });
+    } catch (error) {
+        console.error("Loan Repayment Error:", error);
+        return NextResponse.json({ error: "Failed to process repayment" }, { status: 500 });
     }
 }

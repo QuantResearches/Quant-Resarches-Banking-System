@@ -221,6 +221,7 @@ model AuditLog {
   entity_id    String
   old_value    Json?
   new_value    Json?
+  details      String?   // Human readable description
   ip_address   String?
   user_agent   String?
   created_at   DateTime @default(now())
@@ -607,6 +608,7 @@ model CustomerProfile {
   // Security
   vault_reference_id  String?    // Link to Aadhaar Data Vault
   pan_encrypted       String?    // Column-level encryption
+  aadhaar_number_encrypted String? // Column-level encryption (12 digits)
 
   created_at          DateTime   @default(now())
   updated_at          DateTime   @updatedAt

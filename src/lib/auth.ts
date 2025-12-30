@@ -48,11 +48,6 @@ export const authOptions: NextAuthOptions = {
                 });
 
                 if (!user || !user.is_active) {
-                    // Log failed attempt blindly to avoid user enumeration if possible, 
-                    // though for internal system we might want to know.
-                    // We'll trust strict internal config. 
-                    // BUT if user doesn't exist, we can't really log to them?
-                    // We log to FailedLoginAttempt anyway.
                     await prisma.failedLoginAttempt.create({
                         data: {
                             email,
@@ -75,12 +70,12 @@ export const authOptions: NextAuthOptions = {
                 }
 
                 // 3. Create Session
-                const mfaVerified = !user.mfa_enabled; // If MFA not enabled, it's verified by default. If enabled, false.
+                const mfaVerified = !user.mfa_enabled;
 
                 const session = await prisma.session.create({
                     data: {
                         user_id: user.id,
-                        expires_at: new Date(Date.now() + 8 * 60 * 60 * 1000), // 8 hours
+                        expires_at: new Date(Date.now() + 8 * 60 * 60 * 1000),
                         ip_address: req.headers?.['x-forwarded-for'] as string || 'unknown',
                         user_agent: req.headers?.['user-agent'] as string || 'unknown',
                         // @ts-ignore
@@ -88,7 +83,7 @@ export const authOptions: NextAuthOptions = {
                     },
                 });
 
-                // 4. Update Last Login & Audit Log (Success)
+                // 4. Update Last Login
                 await prisma.user.update({
                     where: { id: user.id },
                     data: { last_login_at: new Date() }
@@ -99,18 +94,17 @@ export const authOptions: NextAuthOptions = {
                         user_id: user.id,
                         action: "LOGIN",
                         entity_type: "Session",
-                        entity_id: session.id, // Log the session ID we created
+                        entity_id: session.id,
                         ip_address: req.headers?.['x-forwarded-for'] as string || 'unknown',
                         user_agent: req.headers?.['user-agent'] as string || 'unknown',
                     }
                 });
 
-                // Return user with session ID embedded
                 return {
                     id: user.id,
                     email: user.email,
                     role: user.role,
-                    sessionId: session.id, // Custom field to pass to JWT
+                    sessionId: session.id,
                     mfa_enabled: user.mfa_enabled,
                 };
             },

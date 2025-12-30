@@ -50,7 +50,12 @@ export default function EditCustomerPage({ params }: { params: Promise<{ id: str
 
             if (!res.ok) {
                 const json = await res.json();
-                throw new Error(json.error || "Failed to update customer");
+                const errorMessage = typeof json.error === 'string'
+                    ? json.error
+                    : Array.isArray(json.error)
+                        ? json.error.map((e: any) => e.message || JSON.stringify(e)).join(", ")
+                        : JSON.stringify(json.error);
+                throw new Error(errorMessage || "Failed to update customer");
             }
 
             router.push("/customers");

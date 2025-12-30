@@ -28,7 +28,6 @@ export default function TopNavbar() {
         { name: "Loans", href: "/admin/loans", icon: Wallet, roles: ["admin", "finance"] },
         { name: "Approvals", href: "/approvals", icon: CheckCircle, roles: ["admin", "finance"] },
         { name: "Reports", href: "/reports", icon: PieChart },
-        { name: "Admin", href: "/settings", icon: Shield, roles: ["admin"] },
     ];
 
     const filteredLinks = links.filter(link => !link.roles || (role && link.roles.includes(role as string)));
@@ -72,10 +71,32 @@ export default function TopNavbar() {
             {/* 3. Right Actions */}
             <div className="flex items-center gap-3 ml-auto">
                 {/* Notifications */}
-                <button className="text-slate-400 hover:text-white relative p-2 rounded-full hover:bg-slate-900 transition-colors">
-                    <Bell size={18} />
-                    <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border border-slate-950"></span>
-                </button>
+                <div className="relative group">
+                    <button className="text-slate-400 hover:text-white relative p-2 rounded-full hover:bg-slate-900 transition-colors">
+                        <Bell size={18} />
+                        <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border border-slate-950"></span>
+                    </button>
+
+                    {/* Simple Notification Dropdown */}
+                    <div className="absolute right-0 top-full mt-2 w-72 bg-white rounded-lg shadow-xl border border-slate-200 z-50 py-1 hidden group-hover:block hover:block animate-in fade-in zoom-in-95 duration-200">
+                        <div className="px-4 py-3 border-b border-slate-100">
+                            <h3 className="text-sm font-semibold text-slate-900">Notifications</h3>
+                        </div>
+                        <div className="py-2">
+                            <div className="px-4 py-2 hover:bg-slate-50">
+                                <p className="text-xs font-medium text-slate-900">System Update</p>
+                                <p className="text-[10px] text-slate-500">System maintenance scheduled for 23:00.</p>
+                            </div>
+                            <div className="px-4 py-2 hover:bg-slate-50">
+                                <p className="text-xs font-medium text-slate-900">New Login</p>
+                                <p className="text-[10px] text-slate-500">New device detected from Mumbai.</p>
+                            </div>
+                        </div>
+                        <div className="border-t border-slate-100 p-2 text-center">
+                            <Link href="/notifications" className="text-xs text-blue-600 font-medium hover:underline">View All</Link>
+                        </div>
+                    </div>
+                </div>
 
                 {/* Vertical Divider */}
                 <div className="h-6 w-px bg-slate-800 mx-1"></div>
@@ -117,7 +138,11 @@ export default function TopNavbar() {
                                 </div>
                                 <div className="border-t border-slate-100 py-1">
                                     <button
-                                        onClick={() => signOut({ callbackUrl: "/login" })}
+                                        onClick={() => {
+                                            if (window.confirm("Are you sure you want to sign out?")) {
+                                                signOut({ callbackUrl: "/login" });
+                                            }
+                                        }}
                                         className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50"
                                     >
                                         <LogOut size={14} />

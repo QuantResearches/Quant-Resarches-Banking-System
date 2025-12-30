@@ -51,7 +51,7 @@ export async function GET() {
             activeAccounts
         });
     } catch (error) {
-        console.error(error);
+        console.error("Stats API Error:", error);
         return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
     }
 }

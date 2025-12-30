@@ -1,137 +1,126 @@
-
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-// @ts-ignore
-import { LoanStatus, TransactionStatus, TransactionChannel, Prisma } from "@prisma/client";
-import { checkIdempotency, saveIdempotency } from "@/lib/idempotency";
+import { addMonths } from "date-fns";
 
-function calculatePMT(principal: number, rate: number, months: number): number {
-    // Rate is annual %, convert to monthly decimal
-    const r = rate / 12 / 100;
-    const n = months;
-    if (r === 0) return principal / n;
-    return (principal * r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
-}
-
-export async function POST(req: Request, props: { params: Promise<{ id: string }> }) {
-    const params = await props.params;
+export async function POST(
+    req: Request,
+    { params }: { params: { id: string } }
+) {
     const session = await getServerSession(authOptions);
     if (!session || (session.user.role !== "admin" && session.user.role !== "finance")) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { id } = params;
-
-    const savedResponse = await checkIdempotency(req);
-    if (savedResponse) return savedResponse;
-
     try {
-        const result = await prisma.$transaction(async (tx) => {
-            // ... logic ...
-            // 1. Fetch Loan
-            // @ts-ignore
-            const loan = await tx.loan.findUnique({
-                where: { id },
-                include: { customer: { include: { accounts: true } } }
-            });
+        const { id } = params;
 
-            if (!loan) throw new Error("Loan not found");
-            // @ts-ignore
-            if (loan.status !== LoanStatus.APPROVED) throw new Error("Loan must be APPROVED to disburse");
-
-            // 2. Identify Target Account (Just pick the first active one for now, or require account_id in body)
-            // Ideally, we ask which account to disburse to. Defaulting to first 'internal' or 'wallet' for simplicity.
-            const targetAccount = loan.customer.accounts[0];
-            if (!targetAccount) throw new Error("Customer has no active accounts to receive funds");
-
-            // 3. Create Transaction (Disbursement)
-            const amount = new Prisma.Decimal(loan.approved_amount || loan.applied_amount);
-
-            const txn = await tx.transaction.create({
-                data: {
-                    account_id: targetAccount.id,
-                    txn_type: "credit", // Deposit Money
-                    amount: amount,
-                    // @ts-ignore
-                    status: TransactionStatus.POSTED,
-                    // @ts-ignore
-                    channel: TransactionChannel.SYSTEM,
-                    description: `Loan Disbursement: ${loan.id.slice(0, 8)}`,
-                    reference: `LOAN-${loan.id.slice(0, 8)}`,
-                    created_by: session.user.id,
-                    effective_date: new Date()
-                } as any
-            });
-
-            // 4. Update Balance (Manual update since we are inside raw transaction if needed, but our Trigger logic is separate? 
-            // Wait, previous transaction logic updated balance manually. We should replicate that or reuse a service.)
-            // Replicating Balance Update Logic:
-            const currentBalanceObj = await tx.accountBalance.findUnique({ where: { account_id: targetAccount.id } });
-            const currentBalance = currentBalanceObj?.balance || new Prisma.Decimal(0);
-            const newBalance = currentBalance.plus(amount);
-
-            await tx.accountBalance.upsert({
-                where: { account_id: targetAccount.id },
-                create: { account_id: targetAccount.id, balance: newBalance },
-                update: { balance: newBalance }
-            });
-
-            // 5. Generate Amortization Schedule
-            // Standard Reducing Balance Method
-            const principal = Number(amount);
-            const rate = Number(loan.interest_rate);
-            const tenure = loan.tenure_months;
-            const emi = calculatePMT(principal, rate, tenure);
-
-            let outstandingOwner = principal;
-            const schedule = [];
-            let currentDate = new Date();
-
-            for (let i = 1; i <= tenure; i++) {
-                // Next Month
-                currentDate.setMonth(currentDate.getMonth() + 1);
-
-                const interestComp = outstandingOwner * (rate / 12 / 100);
-                const principalComp = emi - interestComp;
-
-                outstandingOwner -= principalComp;
-
-                schedule.push({
-                    loan_id: loan.id,
-                    due_date: new Date(currentDate),
-                    amount_due: new Prisma.Decimal(emi),
-                    principal_component: new Prisma.Decimal(principalComp),
-                    interest_component: new Prisma.Decimal(interestComp),
-                    status: "PENDING"
-                });
+        // 1. Fetch Loan & Customer Account
+        const loan = await prisma.loan.findUnique({
+            where: { id },
+            include: {
+                product: true,
+                customer: {
+                    include: { accounts: { where: { account_type: "wallet", status: "active" } } }
+                }
             }
+        });
 
-            // @ts-ignore
-            await tx.loanRepayment.createMany({ data: schedule });
+        if (!loan) return NextResponse.json({ error: "Loan not found" }, { status: 404 });
+        if (loan.status !== "APPROVED") return NextResponse.json({ error: "Loan is not APPROVED. Cannot disburse." }, { status: 400 });
 
-            // 6. Update Loan Status
-            // @ts-ignore
-            const updatedLoan = await tx.loan.update({
+        const depositAccount = loan.customer.accounts[0];
+        if (!depositAccount) return NextResponse.json({ error: "Customer has no active wallet to receive funds." }, { status: 400 });
+
+        // 2. Execute Disbursement Transaction (Atomically)
+        const result = await prisma.$transaction(async (tx) => {
+            // A. Update Loan Status
+            const activeLoan = await tx.loan.update({
                 where: { id },
                 data: {
-                    // @ts-ignore
-                    status: LoanStatus.ACTIVE,
-                    disbursed_at: new Date(),
-                    // Update Approved Amount if it was different? Assuming it matches applied for now.
-                    approved_amount: amount
+                    status: "ACTIVE",
+                    disbursed_at: new Date()
                 }
             });
 
-            return updatedLoan;
+            // B. Generate Repayment Schedule (Simple Amortization / Flat for MVP)
+            // Using Flat Interest for simplicity in MVP, or reading from product type
+            const principal = Number(activeLoan.approved_amount);
+            const rate = Number(activeLoan.interest_rate) / 100;
+            const tenure = activeLoan.tenure_months;
+
+            // Monthly Installment (Simplified: Principal/N + Interest on outstanding)
+            // Let's use EMI formula for Reducing Balance if active, else standard.
+            // MVP: Simple Principal + Interest Split equally
+
+            const totalInterest = principal * rate * (tenure / 12);
+            const totalAmount = principal + totalInterest;
+            const emi = totalAmount / tenure;
+            const monthlyPrincipal = principal / tenure;
+            const monthlyInterest = totalInterest / tenure;
+
+            for (let i = 1; i <= tenure; i++) {
+                await tx.loanRepayment.create({
+                    data: {
+                        loan_id: id,
+                        due_date: addMonths(new Date(), i),
+                        amount_due: emi,
+                        principal_component: monthlyPrincipal,
+                        interest_component: monthlyInterest,
+                        status: "PENDING"
+                    }
+                });
+            }
+
+            // C. Credit Customer Account
+            // 1. Create Transaction Record
+            const txn = await tx.transaction.create({
+                data: {
+                    account_id: depositAccount.id,
+                    txn_type: "credit",
+                    amount: principal,
+                    reference: `LOAN-DISB-${loan.id.slice(0, 8)}`,
+                    description: `Loan Disbursement: ${loan.product.name}`,
+                    status: "POSTED",
+                    channel: "SYSTEM",
+                    created_by: session.user.id
+                }
+            });
+
+            // 2. Update Balance
+            await tx.accountBalance.upsert({
+                where: { account_id: depositAccount.id },
+                update: {
+                    balance: { increment: principal },
+                    last_calculated_at: new Date()
+                },
+                create: {
+                    account_id: depositAccount.id,
+                    balance: principal,
+                    last_calculated_at: new Date()
+                }
+            });
+
+            // D. Audit Log
+            await tx.auditLog.create({
+                data: {
+                    user_id: session.user.id,
+                    action: "LOAN_DISBURSE",
+                    entity_type: "LOAN",
+                    entity_id: id,
+                    details: `Disbursed ${principal} to account ${depositAccount.id}`,
+                    ip_address: "127.0.0.1"
+                }
+            });
+
+            return activeLoan;
         });
 
-        await saveIdempotency(req, result, 200);
-        return NextResponse.json(result);
+        return NextResponse.json({ success: true, loan: result });
 
-    } catch (error: any) {
-        await saveIdempotency(req, { error: error.message }, 500);
-        return NextResponse.json({ error: error.message || "Internal Server Error" }, { status: 500 });
+    } catch (error) {
+        console.error("Loan Disbursement Error:", error);
+        return NextResponse.json({ error: "Failed to disburse loan" }, { status: 500 });
     }
 }

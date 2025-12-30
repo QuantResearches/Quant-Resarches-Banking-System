@@ -46,6 +46,47 @@ async function main() {
         })
     }
     console.log('GL Accounts Seeded')
+
+    // Seed Loan Products
+    const loanProducts = [
+        {
+            name: "Personal Loan",
+            description: "Unsecured personal loan for any purpose",
+            min_amount: 50000,
+            max_amount: 1500000,
+            min_tenure_months: 12,
+            max_tenure_months: 60,
+            interest_rate_min: 10.5,
+            interest_rate_max: 16.0,
+            interest_type: "REDUCING_BALANCE" as const
+        },
+        {
+            name: "Home Loan",
+            description: "Secured loan for purchasing or constructing a home",
+            min_amount: 500000,
+            max_amount: 10000000,
+            min_tenure_months: 60,
+            max_tenure_months: 360,
+            interest_rate_min: 8.50,
+            interest_rate_max: 10.50,
+            interest_type: "REDUCING_BALANCE" as const
+        }
+    ]
+
+    for (const p of loanProducts) {
+        // @ts-ignore
+        await prisma.loanProduct.upsert({
+            where: { name: p.name },
+            update: {},
+            create: {
+                ...p,
+                // @ts-ignore
+                interest_type: p.interest_type,
+                active: true
+            }
+        })
+    }
+    console.log('Loan Products Seeded')
 }
 
 main()

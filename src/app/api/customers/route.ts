@@ -31,7 +31,7 @@ export async function POST(req: Request) {
         const body = await req.json();
 
         // Basic Validation
-        if (!body.full_name || !body.email || !body.phone || !body.address || !body.dob || !body.pan || !body.aadhaar_last4) {
+        if (!body.full_name || !body.email || !body.phone || !body.address || !body.dob || !body.pan || !body.aadhaar_number) {
             return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
         }
 
@@ -39,7 +39,7 @@ export async function POST(req: Request) {
             full_name, email, phone, address,
             dob, gender, marital_status, father_name,
             city, state, pincode, nationality,
-            pan, aadhaar_last4,
+            pan, aadhaar_number,
             risk_category, pep_flag
         } = body;
 
@@ -58,6 +58,7 @@ export async function POST(req: Request) {
 
             // 2. Encrypt Sensitive Data
             const panEncrypted = encrypt(pan);
+            const aadhaarEncrypted = encrypt(aadhaar_number);
 
             // 3. Create Detailed Profile
             await tx.customerProfile.create({
@@ -74,6 +75,7 @@ export async function POST(req: Request) {
                     state,
                     pincode,
                     pan_encrypted: panEncrypted,
+                    aadhaar_number_encrypted: aadhaarEncrypted,
                     kyc_status: "PENDING_VERIFICATION"
                 }
             });

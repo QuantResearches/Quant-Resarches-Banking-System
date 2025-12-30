@@ -158,8 +158,8 @@ export default function BankCustomerForm() {
                         <p className="text-[10px] text-slate-400">Format: 5 Letters, 4 Digits, 1 Letter</p>
                     </div>
                     <div className="space-y-2">
-                        <Label>Aadhaar (Last 4 Digits) <span className="text-red-500">*</span></Label>
-                        <Input name="aadhaar_last4" required pattern="\d{4}" maxLength={4} placeholder="XXXX" className="font-mono" />
+                        <Label>Aadhaar Number <span className="text-red-500">*</span></Label>
+                        <Input name="aadhaar_number" required pattern="\d{12}" maxLength={12} placeholder="12 Digit Number" className="font-mono" />
                     </div>
                 </CardContent>
             </Card>

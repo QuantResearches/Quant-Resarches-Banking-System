@@ -45,7 +45,7 @@ export default async function AccountDetails(props: { params: Promise<{ id: stri
                 <div className="text-right">
                     <p className="text-sm text-gray-500 uppercase">Current Balance</p>
                     <p className="text-3xl font-mono font-bold text-gray-900">
-                        ${Number(account.balance?.balance || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                        {Number(account.balance?.balance || 0).toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}
                     </p>
                 </div>
             </div>
@@ -80,12 +80,7 @@ export default async function AccountDetails(props: { params: Promise<{ id: stri
                     <h3 className="text-sm font-semibold text-gray-900 uppercase">Recent Transactions</h3>
                     <div className="flex items-center gap-3">
                         <DownloadStatement account={account} />
-                        <Link
-                            href={`/accounts/${params.id}/edit`}
-                            className="px-4 py-2 bg-white border border-gray-300 rounded text-sm font-medium hover:bg-gray-50"
-                        >
-                            Edit Account
-                        </Link>
+
                     </div>
                 </div>
 
@@ -118,7 +113,7 @@ export default async function AccountDetails(props: { params: Promise<{ id: stri
                                         </td>
                                         <td className={`px-6 py-3 font-mono font-medium ${txn.txn_type === 'credit' ? 'text-green-600' : 'text-red-600'
                                             }`}>
-                                            {txn.txn_type === 'credit' ? '+' : '-'}${Number(txn.amount).toFixed(2)}
+                                            {txn.txn_type === 'credit' ? '+' : '-'}{Number(txn.amount).toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}
                                         </td>
                                         <td className="px-6 py-3 text-gray-500">{txn.reference || '-'}</td>
                                     </tr>
