@@ -78,109 +78,103 @@ export default function TopNavbar() {
                 isDestructive={true}
             />
 
-            <header className="fixed top-0 left-0 right-0 h-16 bg-slate-950 border-b border-slate-800 z-50 flex items-center justify-between px-4 md:px-6 shadow-sm">
+            {/* Midnight Premium Header (Refined) */}
+            <header className="fixed top-0 left-0 right-0 h-16 bg-slate-950 border-b border-slate-800 z-50 flex items-center justify-between px-4 md:px-6 shadow-md transition-all duration-300">
                 {/* 1. Branding */}
                 <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-blue-700 rounded-md flex items-center justify-center text-white font-bold text-lg shadow-inner">
+                    <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-lg shadow-[0_0_15px_rgba(37,99,235,0.4)] ring-1 ring-white/10">
                         Q
                     </div>
                     <div className="hidden md:block">
-                        <Link href="/dashboard">
-                            <h1 className="text-white font-semibold text-sm leading-tight tracking-tight">Quant Researches</h1>
-                            <p className="text-[10px] text-slate-400 font-mono leading-none">INTERNAL SYSTEMS</p>
+                        <Link href="/dashboard" className="group flex items-center">
+                            <h1 className="text-white font-medium text-lg tracking-tight group-hover:text-blue-400 transition-colors">Quant Researches</h1>
                         </Link>
                     </div>
                 </div>
 
-                {/* 2. Desktop Navigation */}
-                <div className="hidden md:flex items-center gap-1 mx-6 overflow-x-auto no-scrollbar mask-gradient">
+                {/* 2. Desktop Navigation (Standard Flex, No Scroll) */}
+                <div className="hidden md:flex items-center gap-8 mx-auto">
                     {isLoading ? (
-                        /* Simple Skeleton for Links */
-                        <div className="flex gap-2 animate-pulse">
-                            {[1, 2, 3, 4, 5].map(i => (
-                                <div key={i} className="h-9 w-24 bg-slate-900 rounded-md"></div>
+                        <div className="flex gap-4 animate-pulse">
+                            {[1, 2, 3, 4].map(i => (
+                                <div key={i} className="h-4 w-20 bg-slate-800 rounded"></div>
                             ))}
                         </div>
                     ) : (
                         filteredLinks.map((link) => {
                             const isActive = pathname === link.href || (link.href !== "/dashboard" && pathname.startsWith(link.href));
-                            const Icon = link.icon;
                             return (
                                 <Link
                                     key={link.href}
                                     href={link.href}
                                     className={clsx(
-                                        "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 border border-transparent whitespace-nowrap",
+                                        "text-sm font-medium transition-colors duration-200 relative py-1",
                                         isActive
-                                            ? "bg-slate-800 text-white border-slate-700/50 shadow-sm"
-                                            : "text-slate-400 hover:text-slate-100 hover:bg-slate-900"
+                                            ? "text-white"
+                                            : "text-slate-400 hover:text-white"
                                     )}
                                 >
-                                    <Icon size={16} />
                                     <span>{link.name}</span>
+                                    {isActive && (
+                                        <span className="absolute -bottom-[21px] left-0 right-0 h-[3px] bg-blue-500 rounded-t-full shadow-[0_0_10px_rgba(59,130,246,0.6)]"></span>
+                                    )}
                                 </Link>
                             );
                         })
                     )}
                 </div>
 
-                {/* 3. Right Actions */}
-                <div className="flex items-center gap-3 ml-auto">
-                    {/* Search Bar (Visual Only for now) */}
-                    <div className="hidden lg:flex items-center relative mr-2">
-                        <Search size={16} className="absolute left-3 text-slate-500" />
-                        <input
-                            type="text"
-                            placeholder="Search..."
-                            className="bg-slate-900 border border-slate-700 text-slate-200 text-sm rounded-full pl-9 pr-4 py-1.5 focus:outline-none focus:border-blue-500 w-64 transition-all"
-                        />
+                {/* 3. Right Actions (No Search) */}
+                <div className="flex items-center gap-4 ml-auto md:ml-0">
+                    {/* Notifications */}
+                    <div className="relative">
+                        <NotificationDropdown />
                     </div>
 
-                    {/* Notifications */}
-                    <NotificationDropdown />
-
                     {/* Vertical Divider */}
-                    <div className="h-6 w-px bg-slate-800 mx-1"></div>
+                    <div className="h-5 w-px bg-slate-800"></div>
 
                     {/* Profile Dropdown */}
                     <div className="relative">
                         <button
                             onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
-                            className="flex items-center gap-2 group p-1 pr-2 rounded-full hover:bg-slate-900 transition-colors border border-transparent hover:border-slate-800"
+                            className={clsx(
+                                "flex items-center gap-3 group p-1 pr-3 rounded-lg transition-all duration-200 border",
+                                isProfileMenuOpen ? "bg-slate-800 border-slate-700" : "border-transparent hover:bg-slate-900 hover:border-slate-800"
+                            )}
                         >
-                            <div className="w-8 h-8 rounded-full bg-blue-900/30 text-blue-400 flex items-center justify-center border border-blue-800">
+                            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-slate-700 to-slate-900 text-slate-200 flex items-center justify-center border border-slate-700 shadow-sm ring-1 ring-white/5">
                                 <span className="text-xs font-bold">{session?.user?.name?.[0] || "U"}</span>
                             </div>
-                            <div className="hidden md:block text-left">
-                                <p className="text-xs font-medium text-slate-200 group-hover:text-white">{session?.user?.name?.split(' ')[0]}</p>
-                                <p className="text-[10px] text-slate-500 uppercase">{role}</p>
+                            <div className="hidden md:block text-left leading-tight">
+                                <p className="text-sm font-medium text-slate-300 group-hover:text-white transition-colors">{session?.user?.name?.split(' ')[0]}</p>
                             </div>
-                            <ChevronDown size={14} className="text-slate-500 group-hover:text-slate-300" />
+                            <ChevronDown size={14} className={clsx("text-slate-500 transition-transform duration-200", isProfileMenuOpen && "rotate-180")} />
                         </button>
 
                         {/* Dropdown Menu */}
                         {isProfileMenuOpen && (
                             <>
                                 <div className="fixed inset-0 z-40" onClick={() => setIsProfileMenuOpen(false)}></div>
-                                <div className="absolute right-0 top-full mt-2 w-56 bg-white rounded-lg shadow-xl border border-slate-200 z-50 py-1 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-                                    <div className="px-4 py-3 border-b border-slate-100 bg-slate-50/50">
-                                        <p className="text-sm font-medium text-slate-900">{session?.user?.name}</p>
+                                <div className="absolute right-0 top-full mt-2 w-56 bg-slate-950 rounded-lg shadow-xl border border-slate-800 z-50 py-1 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                                    <div className="px-4 py-3 border-b border-slate-800 bg-slate-900/50">
+                                        <p className="text-sm font-medium text-white">{session?.user?.name}</p>
                                         <p className="text-xs text-slate-500 truncate">{session?.user?.email}</p>
                                     </div>
-                                    <div className="py-1">
-                                        <Link href="/profile" className="flex items-center gap-2 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-blue-600">
-                                            <User size={14} />
+                                    <div className="p-1 space-y-0.5">
+                                        <Link href="/profile" className="flex items-center gap-3 px-3 py-2 text-xs font-medium text-slate-400 hover:bg-slate-900 hover:text-white rounded-md transition-colors">
+                                            <User size={14} className="text-slate-500" />
                                             My Profile
                                         </Link>
-                                        <Link href="/settings" className="flex items-center gap-2 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-blue-600">
-                                            <Shield size={14} />
+                                        <Link href="/settings" className="flex items-center gap-3 px-3 py-2 text-xs font-medium text-slate-400 hover:bg-slate-900 hover:text-white rounded-md transition-colors">
+                                            <Shield size={14} className="text-slate-500" />
                                             Security Settings
                                         </Link>
                                     </div>
-                                    <div className="border-t border-slate-100 py-1">
+                                    <div className="border-t border-slate-800 p-1 mt-1">
                                         <button
                                             onClick={handleSignOut}
-                                            className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                                            className="w-full flex items-center gap-3 px-3 py-2 text-xs font-medium text-red-400 hover:bg-slate-900 hover:text-red-300 rounded-md transition-colors"
                                         >
                                             <LogOut size={14} />
                                             Sign Out
@@ -193,7 +187,7 @@ export default function TopNavbar() {
 
                     {/* Mobile Menu Toggle */}
                     <button
-                        className="md:hidden text-slate-400 hover:text-white p-2"
+                        className="md:hidden text-slate-400 hover:text-white p-2 rounded-lg hover:bg-slate-800 transition-colors"
                         onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                     >
                         {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
@@ -213,9 +207,9 @@ export default function TopNavbar() {
                                         href={link.href}
                                         onClick={() => setIsMobileMenuOpen(false)}
                                         className={clsx(
-                                            "flex items-center gap-3 px-4 py-3 rounded-md text-sm font-medium",
+                                            "flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors",
                                             isActive
-                                                ? "bg-blue-600 text-white"
+                                                ? "bg-blue-900/20 text-blue-400"
                                                 : "text-slate-400 hover:text-white hover:bg-slate-900"
                                         )}
                                     >
@@ -224,10 +218,10 @@ export default function TopNavbar() {
                                     </Link>
                                 );
                             })}
-                            <div className="h-px bg-slate-800 my-2"></div>
+                            <div className="h-px bg-slate-800 my-4"></div>
                             <button
                                 onClick={handleSignOut}
-                                className="w-full flex items-center gap-3 px-4 py-3 rounded-md text-sm font-medium text-red-400 hover:bg-slate-900"
+                                className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-red-400 hover:bg-slate-900 hover:text-red-300 transition-colors"
                             >
                                 <LogOut size={18} />
                                 Sign Out

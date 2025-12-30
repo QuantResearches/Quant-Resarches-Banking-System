@@ -1,6 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { Button } from "@/components/ui/Button";
+import CurrencyInput from "@/components/ui/CurrencyInput";
+import { Label } from "@/components/ui/Label";
+import { Input } from "@/components/ui/Input";
+import { Select } from "@/components/ui/Select";
 import { Plus, X, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useStatusPopup } from "@/hooks/useStatusPopup";
@@ -25,7 +30,7 @@ export default function CreateProductForm() {
 
     const handleChange = (e: any) => {
         const { name, value, type } = e.target;
-        setFormData(prev => ({
+        setFormData((prev: any) => ({
             ...prev,
             [name]: type === 'number' ? parseFloat(value) : value
         }));
@@ -82,72 +87,81 @@ export default function CreateProductForm() {
                 <form onSubmit={handleSubmit} className="p-6 space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="col-span-2">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Product Name</label>
-                            <input
+                            <Label>Product Name</Label>
+                            <Input
                                 required
                                 type="text"
                                 name="name"
                                 value={formData.name}
                                 onChange={handleChange}
                                 placeholder="e.g. Gold Loan"
-                                className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                             />
                         </div>
 
                         <div className="col-span-2">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                            <Label>Description</Label>
                             <textarea
                                 name="description"
                                 value={formData.description}
                                 onChange={handleChange}
                                 rows={2}
-                                className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                className="flex min-h-[80px] w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm placeholder:text-slate-400 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 disabled:cursor-not-allowed disabled:opacity-50 transition-all shadow-sm hover:border-blue-200"
                             />
                         </div>
 
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label>Min Amount (₹)</Label>
+                                <CurrencyInput
+                                    placeholder="0"
+                                    value={formData.min_amount}
+                                    onValueChange={val => setFormData({ ...formData, min_amount: val ? parseFloat(val) : 0 })}
+                                    className="font-mono"
+                                    required
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Max Amount (₹)</Label>
+                                <CurrencyInput
+                                    placeholder="0"
+                                    value={formData.max_amount}
+                                    onValueChange={val => setFormData({ ...formData, max_amount: val ? parseFloat(val) : 0 })}
+                                    className="font-mono"
+                                    required
+                                />
+                            </div>
+                        </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Interest Type</label>
-                            <select
+                            <Label>Interest Type</Label>
+                            <Select
                                 name="interest_type"
                                 value={formData.interest_type}
                                 onChange={handleChange}
-                                className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                             >
                                 <option value="REDUCING_BALANCE">Reducing Balance</option>
                                 <option value="FLAT_RATE">Flat Rate</option>
-                            </select>
+                            </Select>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-2">
+                        <div className="grid grid-cols-2 gap-4">
                             <div>
-                                <label className="block text-xs font-medium text-gray-500 mb-1">Min Rate (%)</label>
-                                <input required type="number" step="0.01" name="interest_rate_min" value={formData.interest_rate_min} onChange={handleChange} className="w-full p-2 border border-gray-300 rounded" />
+                                <Label className="text-xs text-gray-500">Min Rate (%)</Label>
+                                <Input required type="number" step="0.01" name="interest_rate_min" value={formData.interest_rate_min} onChange={handleChange} />
                             </div>
                             <div>
-                                <label className="block text-xs font-medium text-gray-500 mb-1">Max Rate (%)</label>
-                                <input required type="number" step="0.01" name="interest_rate_max" value={formData.interest_rate_max} onChange={handleChange} className="w-full p-2 border border-gray-300 rounded" />
-                            </div>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-2">
-                            <div>
-                                <label className="block text-xs font-medium text-gray-500 mb-1">Min Amount</label>
-                                <input required type="number" name="min_amount" value={formData.min_amount} onChange={handleChange} className="w-full p-2 border border-gray-300 rounded" />
-                            </div>
-                            <div>
-                                <label className="block text-xs font-medium text-gray-500 mb-1">Max Amount</label>
-                                <input required type="number" name="max_amount" value={formData.max_amount} onChange={handleChange} className="w-full p-2 border border-gray-300 rounded" />
+                                <Label className="text-xs text-gray-500">Max Rate (%)</Label>
+                                <Input required type="number" step="0.01" name="interest_rate_max" value={formData.interest_rate_max} onChange={handleChange} />
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-2">
+                        <div className="grid grid-cols-2 gap-4">
                             <div>
-                                <label className="block text-xs font-medium text-gray-500 mb-1">Min Tenure (M)</label>
-                                <input required type="number" name="min_tenure_months" value={formData.min_tenure_months} onChange={handleChange} className="w-full p-2 border border-gray-300 rounded" />
+                                <Label className="text-xs text-gray-500">Min Tenure (M)</Label>
+                                <Input required type="number" name="min_tenure_months" value={formData.min_tenure_months} onChange={handleChange} />
                             </div>
                             <div>
-                                <label className="block text-xs font-medium text-gray-500 mb-1">Max Tenure (M)</label>
-                                <input required type="number" name="max_tenure_months" value={formData.max_tenure_months} onChange={handleChange} className="w-full p-2 border border-gray-300 rounded" />
+                                <Label className="text-xs text-gray-500">Max Tenure (M)</Label>
+                                <Input required type="number" name="max_tenure_months" value={formData.max_tenure_months} onChange={handleChange} />
                             </div>
                         </div>
                     </div>

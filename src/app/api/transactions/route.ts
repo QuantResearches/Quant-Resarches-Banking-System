@@ -134,7 +134,7 @@ export async function POST(req: Request) {
                     data: {
                         type: 'large_amount',
                         severity: 'medium',
-                        description: `Large Transaction detected: ₹${decimalAmount}`,
+                        description: `Large Transaction detected: ₹${decimalAmount.toNumber().toLocaleString('en-IN')}`,
                         transaction_id: newTxn.id,
                         user_id: session.user.id,
                         account_id: account_id

@@ -2,6 +2,14 @@
 
 import { useEffect, useState, use } from "react";
 import { useRouter } from "next/navigation";
+import { Combobox } from "@/components/ui/Combobox";
+import { INDIAN_STATES } from "@/data/indian-states";
+import { Card, CardContent } from "@/components/ui/Card";
+import { Label } from "@/components/ui/Label";
+import { Input } from "@/components/ui/Input";
+import { Button } from "@/components/ui/Button";
+import { Select } from "@/components/ui/Select";
+import { Loader2 } from "lucide-react";
 
 export default function EditCustomerPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = use(params);
@@ -39,6 +47,15 @@ export default function EditCustomerPage({ params }: { params: Promise<{ id: str
             phone: formData.get("phone"),
             address: formData.get("address"),
             status: formData.get("status"),
+            // Profile
+            dob: formData.get("dob"),
+            gender: formData.get("gender"),
+            marital_status: formData.get("marital_status"),
+            pan: formData.get("pan"),
+            aadhaar: formData.get("aadhaar"),
+            city: formData.get("city"),
+            state: formData.get("state"),
+            pincode: formData.get("pincode"),
         };
 
         try {
@@ -72,77 +89,181 @@ export default function EditCustomerPage({ params }: { params: Promise<{ id: str
     if (!customer) return <div className="p-6">Customer not found</div>;
 
     return (
-        <div className="max-w-2xl mx-auto">
-            <h1 className="text-2xl font-semibold mb-6">Edit Customer</h1>
-
-            <div className="bg-white border border-gray-200 p-6">
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
-                        <input
-                            name="full_name"
-                            defaultValue={customer.full_name}
-                            required
-                            className="w-full p-2 border border-gray-300 rounded-none focus:border-blue-500 focus:outline-none"
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                        <input
-                            name="email"
-                            type="email"
-                            defaultValue={customer.email}
-                            required
-                            className="w-full p-2 border border-gray-300 rounded-none focus:border-blue-500 focus:outline-none"
-                        />
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
-                            <input
-                                name="phone"
-                                defaultValue={customer.phone}
-                                required
-                                pattern="\d{10}"
-                                title="Phone number must be exactly 10 digits"
-                                maxLength={10}
-                                className="w-full p-2 border border-gray-300 rounded-none focus:border-blue-500 focus:outline-none"
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                            <select
-                                name="status"
-                                defaultValue={customer.status}
-                                className="w-full p-2 border border-gray-300 rounded-none focus:border-blue-500 focus:outline-none bg-white"
-                            >
-                                <option value="active">Active</option>
-                                <option value="inactive">Inactive</option>
-                                <option value="restricted">Restricted</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
-                        <textarea
-                            name="address"
-                            defaultValue={customer.address}
-                            rows={3}
-                            required
-                            className="w-full p-2 border border-gray-300 rounded-none focus:border-blue-500 focus:outline-none"
-                        />
-                    </div>
-
-                    <div className="pt-4 flex gap-3">
-                        <button disabled={saving} type="submit" className="px-4 py-2 bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 disabled:opacity-50 rounded-none">
-                            {saving ? "Saving..." : "Save Changes"}
-                        </button>
-                        <button disabled={saving} type="button" onClick={() => router.back()} className="px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium hover:bg-gray-200 rounded-none">
-                            Cancel
-                        </button>
-                    </div>
-                </form>
+        <div className="max-w-3xl mx-auto space-y-6 pb-12">
+            <div>
+                <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Edit Customer</h1>
+                <p className="text-sm text-slate-500">Update customer profile and KYC details.</p>
             </div>
+
+            <Card className="border-slate-200 shadow-sm">
+                <CardContent className="p-6">
+                    <form onSubmit={handleSubmit} className="space-y-6">
+                        <div className="space-y-4">
+                            <h2 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
+                                <span className="w-1 h-6 bg-blue-600 rounded-full"></span>
+                                Basic Information
+                            </h2>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label>Full Name</Label>
+                                    <Input
+                                        name="full_name"
+                                        defaultValue={customer.full_name}
+                                        required
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Email</Label>
+                                    <Input
+                                        name="email"
+                                        type="email"
+                                        defaultValue={customer.email}
+                                        required
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Phone</Label>
+                                    <Input
+                                        name="phone"
+                                        defaultValue={customer.phone}
+                                        required
+                                        pattern="\d{10}"
+                                        title="Phone number must be exactly 10 digits"
+                                        maxLength={10}
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Status</Label>
+                                    <Select
+                                        name="status"
+                                        defaultValue={customer.status}
+                                    >
+                                        <option value="active">Active</option>
+                                        <option value="inactive">Inactive</option>
+                                        <option value="restricted">Restricted</option>
+                                    </Select>
+                                </div>
+                                <div className="col-span-2 space-y-2">
+                                    <Label>Address</Label>
+                                    <textarea
+                                        name="address"
+                                        defaultValue={customer.address}
+                                        rows={2}
+                                        required
+                                        className="flex min-h-[80px] w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm placeholder:text-slate-400 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 disabled:cursor-not-allowed disabled:opacity-50 transition-all shadow-sm hover:border-blue-200"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="pt-6 border-t border-slate-100 space-y-4">
+                            <h2 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
+                                <span className="w-1 h-6 bg-purple-600 rounded-full"></span>
+                                Extended Profile (KYC)
+                            </h2>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label>Date of Birth</Label>
+                                    <Input
+                                        type="date"
+                                        name="dob"
+                                        defaultValue={customer.profile?.dob ? new Date(customer.profile.dob).toISOString().split('T')[0] : ''}
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Gender</Label>
+                                    <Select
+                                        name="gender"
+                                        defaultValue={customer.profile?.gender || ""}
+                                    >
+                                        <option value="">Select Gender</option>
+                                        <option value="Male">Male</option>
+                                        <option value="Female">Female</option>
+                                        <option value="Other">Other</option>
+                                    </Select>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label>Marital Status</Label>
+                                    <Select
+                                        name="marital_status"
+                                        defaultValue={customer.profile?.marital_status || ""}
+                                    >
+                                        <option value="">Select Status</option>
+                                        <option value="Single">Single</option>
+                                        <option value="Married">Married</option>
+                                        <option value="Divorced">Divorced</option>
+                                        <option value="Widowed">Widowed</option>
+                                    </Select>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>PAN Number</Label>
+                                    <Input
+                                        name="pan"
+                                        defaultValue={customer.profile?.pan_encrypted || ""}
+                                        className="uppercase font-mono"
+                                        placeholder="ABCD1234E"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Aadhaar Number</Label>
+                                    <Input
+                                        name="aadhaar"
+                                        defaultValue={customer.profile?.aadhaar_number_encrypted || ""}
+                                        maxLength={12}
+                                        className="font-mono"
+                                        placeholder="12 Digit Number"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                                <div className="space-y-2">
+                                    <Label>City</Label>
+                                    <Input
+                                        name="city"
+                                        defaultValue={customer.profile?.city || ""}
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>State</Label>
+                                    {/* Combobox handles its own styling internally, might need update if it looks off */}
+                                    <Combobox
+                                        options={INDIAN_STATES}
+                                        name="state"
+                                        placeholder="Select State..."
+                                        value={customer.profile?.state || ""}
+                                        onChange={(val) => {
+                                            setCustomer((prev: any) => ({
+                                                ...prev,
+                                                profile: { ...prev.profile, state: val }
+                                            }));
+                                        }}
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Pincode</Label>
+                                    <Input
+                                        name="pincode"
+                                        defaultValue={customer.profile?.pincode || ""}
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="pt-6 flex justify-end gap-3">
+                            <Button type="button" variant="outline" onClick={() => router.back()}>
+                                Cancel
+                            </Button>
+                            <Button type="submit" disabled={saving}>
+                                {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                Save Changes
+                            </Button>
+                        </div>
+                    </form>
+                </CardContent>
+            </Card>
         </div>
     );
 }

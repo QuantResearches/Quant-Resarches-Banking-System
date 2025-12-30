@@ -69,7 +69,7 @@ export default async function RiskDashboard() {
                                     {alert.user?.email || "Unknown"}
                                 </td>
                                 <td className="px-6 py-4 text-gray-800 max-w-xs truncate">
-                                    {alert.description}
+                                    {alert.description.replace(/₹(\d+)/g, (match: string, p1: string) => `₹${Number(p1).toLocaleString('en-IN')}`)}
                                 </td>
                                 <td className="px-6 py-4 text-right">
                                     <ResolveButton alertId={alert.id} />
@@ -77,10 +77,16 @@ export default async function RiskDashboard() {
                             </tr>
                         ))}
                         {alerts.length === 0 && (
-                            <tr><td colSpan={6} className="px-6 py-8 text-center text-gray-500 flex flex-col items-center gap-2">
-                                <CheckCircle className="text-green-500" size={32} />
-                                <span>System Secure. No active alerts.</span>
-                            </td></tr>
+                            <tr>
+                                <td colSpan={6} className="px-6 py-12">
+                                    <div className="flex flex-col items-center justify-center gap-3 text-slate-500">
+                                        <div className="bg-emerald-50 p-3 rounded-full">
+                                            <CheckCircle className="text-emerald-600" size={32} />
+                                        </div>
+                                        <span className="font-medium">System Secure. No active alerts.</span>
+                                    </div>
+                                </td>
+                            </tr>
                         )}
                     </tbody>
                 </table>

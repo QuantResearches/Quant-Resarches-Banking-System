@@ -5,12 +5,14 @@ import { authOptions } from "@/lib/auth";
 
 export async function PATCH(
     req: Request,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     const session = await getServerSession(authOptions);
     if (!session || (session.user.role !== "admin" && session.user.role !== "finance")) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+
+    const { id } = await params;
 
     try {
         const body = await req.json();
@@ -21,7 +23,7 @@ export async function PATCH(
         }
 
         const profile = await prisma.customerProfile.update({
-            where: { customer_id: params.id }, // Note: We passed customerId in params
+            where: { customer_id: id }, // Note: We passed customerId in params
             data: {
                 kyc_status: status,
                 last_kyc_date: status === "VERIFIED" ? new Date() : undefined
@@ -33,9 +35,9 @@ export async function PATCH(
             data: {
                 user_id: session.user.id,
                 action: "KYC_UPDATE",
-                details: `Updated KYC status for customer ${params.id} to ${status}`,
+                details: `Updated KYC status for customer ${id} to ${status}`,
                 entity_type: "CUSTOMER_PROFILE",
-                entity_id: params.id,
+                entity_id: id,
                 ip_address: "127.0.0.1"
             }
         });

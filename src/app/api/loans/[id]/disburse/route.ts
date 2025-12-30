@@ -6,7 +6,7 @@ import { addMonths } from "date-fns";
 
 export async function POST(
     req: Request,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     const session = await getServerSession(authOptions);
     if (!session || (session.user.role !== "admin" && session.user.role !== "finance")) {
@@ -14,7 +14,7 @@ export async function POST(
     }
 
     try {
-        const { id } = params;
+        const { id } = await params;
 
         // 1. Fetch Loan & Customer Account
         const loan = await prisma.loan.findUnique({

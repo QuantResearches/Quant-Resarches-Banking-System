@@ -1,5 +1,6 @@
 import prisma from "@/lib/prisma";
 import AccountForm from "@/app/(dashboard)/accounts/create/AccountForm";
+import { Card, CardContent } from "@/components/ui/Card";
 
 export const dynamic = 'force-dynamic';
 
@@ -12,9 +13,17 @@ export default async function CreateAccountPage() {
     });
 
     return (
-        <div className="max-w-2xl mx-auto">
-            <h1 className="text-2xl font-semibold mb-6">Create New Account</h1>
-            <AccountForm customers={customers} />
+        <div className="max-w-2xl mx-auto space-y-6">
+            <div>
+                <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Create Account</h1>
+                <p className="text-sm text-slate-500">Open a new banking account for a customer.</p>
+            </div>
+
+            <Card className="border-slate-200 shadow-sm">
+                <CardContent className="p-6">
+                    <AccountForm customers={customers} />
+                </CardContent>
+            </Card>
         </div>
     );
 }

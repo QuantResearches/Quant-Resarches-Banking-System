@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/Card";
 import { Label } from "@/components/ui/Label";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
+import CurrencyInput from "@/components/ui/CurrencyInput";
 import { useStatusPopup } from "@/hooks/useStatusPopup";
 
 interface Props {
@@ -28,7 +29,7 @@ export default function TransactionForm({ accounts }: Props) {
             txn_type: formData.get("txn_type"),
             amount: parseFloat(formData.get("amount") as string),
             reference: formData.get("reference"),
-            description: formData.get("description"),
+            description: (formData.get("reference") as string) || "", // Use reference as description since UI combines them
         };
 
         try {
@@ -46,7 +47,10 @@ export default function TransactionForm({ accounts }: Props) {
                     router.push("/approvals?status=pending");
                     return;
                 }
-                throw new Error(json.error || "Transaction failed");
+                const errorMessage = typeof json.error === 'string'
+                    ? json.error
+                    : JSON.stringify(json.error || "Transaction failed");
+                throw new Error(errorMessage);
             }
 
             showSuccess("Transaction Recorded Successfully");
@@ -82,7 +86,7 @@ export default function TransactionForm({ accounts }: Props) {
                             <option value="">-- Select Account --</option>
                             {accounts.map((acc) => (
                                 <option key={acc.id} value={acc.id}>
-                                    {acc.customer.full_name} • {acc.account_type.toUpperCase()} • ₹{acc.balance}
+                                    {acc.customer.full_name} • {acc.account_type.toUpperCase()} • ₹{acc.balance.balance}
                                 </option>
                             ))}
                         </select>
@@ -103,15 +107,19 @@ export default function TransactionForm({ accounts }: Props) {
 
                     <div className="space-y-2">
                         <Label htmlFor="amount">Amount (₹)</Label>
-                        <Input
-                            type="number"
-                            name="amount"
-                            id="amount"
+                        <CurrencyInput
+                            name="amount_display" // Changed name to avoid conflict, we'll use a hidden input for the raw value if relying on native FormData, OR just let the component handle it if we switch to controlled state.
+                            // Better approach for existing "name" based form:
+                            // Use CurrencyInput as a UI wrapper, sync with a hidden real input.
+                            id="amount_input"
                             placeholder="0.00"
-                            step="0.01"
-                            min="0.01"
                             required
+                            onValueChange={(val) => {
+                                const hiddenInput = document.getElementById("amount") as HTMLInputElement;
+                                if (hiddenInput) hiddenInput.value = val;
+                            }}
                         />
+                        <input type="hidden" name="amount" id="amount" required />
                     </div>
 
                     <div className="space-y-2">

@@ -47,7 +47,12 @@ async function getStats() {
             security_status: securityStatus,
             mfa_enabled_count: 0, // Placeholder
             last_reconciled: lastReconciliation?.matched_at || null,
-            pending_actions: pendingCount
+            pending_actions: pendingCount,
+            pending_breakdown: {
+                kyc: kycPending,
+                loans: loansPending,
+                risk: riskAlerts
+            }
         }
     };
 }

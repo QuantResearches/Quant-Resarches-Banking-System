@@ -9,9 +9,26 @@ import { Card } from "@/components/ui/Card";
 
 export const dynamic = 'force-dynamic';
 
-export default async function CustomersPage() {
+type Props = {
+    searchParams: Promise<{ search?: string }>;
+};
+
+export default async function CustomersPage({ searchParams }: Props) {
     const session = await getServerSession(authOptions);
+    const { search } = await searchParams;
+
+    // Build filter
+    const where: any = {};
+    if (search) {
+        where.OR = [
+            { full_name: { contains: search, mode: 'insensitive' } },
+            { email: { contains: search, mode: 'insensitive' } },
+            { phone: { contains: search, mode: 'insensitive' } },
+        ];
+    }
+
     const customers = await prisma.customer.findMany({
+        where,
         orderBy: { created_at: "desc" },
     });
 

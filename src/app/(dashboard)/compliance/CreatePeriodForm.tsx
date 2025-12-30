@@ -3,6 +3,10 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
+import { Input } from "@/components/ui/Input";
+import { Button } from "@/components/ui/Button";
+import { Label } from "@/components/ui/Label";
 
 import { useStatusPopup } from "@/hooks/useStatusPopup";
 
@@ -41,51 +45,52 @@ export default function CreatePeriodForm() {
     };
 
     return (
-        <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
-            <h2 className="text-lg font-semibold mb-4 text-slate-900">Define Fiscal Period</h2>
-            <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Period Name</label>
-                    <input
-                        type="text"
-                        required
-                        placeholder="e.g. Q4-2024"
-                        value={name}
-                        onChange={e => setName(e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
-                    />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
-                        <input
-                            type="date"
+        <Card className="border-slate-200 shadow-sm">
+            <CardHeader>
+                <CardTitle>Define Fiscal Period</CardTitle>
+            </CardHeader>
+            <CardContent>
+                <form onSubmit={handleSubmit} className="space-y-4">
+                    <div className="space-y-2">
+                        <Label>Period Name</Label>
+                        <Input
+                            type="text"
                             required
-                            value={startDate}
-                            onChange={e => setStartDate(e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                            placeholder="e.g. Q4-2024"
+                            value={name}
+                            onChange={e => setName(e.target.value)}
                         />
                     </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
-                        <input
-                            type="date"
-                            required
-                            value={endDate}
-                            onChange={e => setEndDate(e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
-                        />
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label>Start Date</Label>
+                            <Input
+                                type="date"
+                                required
+                                value={startDate}
+                                onChange={e => setStartDate(e.target.value)}
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label>End Date</Label>
+                            <Input
+                                type="date"
+                                required
+                                value={endDate}
+                                onChange={e => setEndDate(e.target.value)}
+                            />
+                        </div>
                     </div>
-                </div>
 
-                <button
-                    type="submit"
-                    disabled={loading}
-                    className="w-full bg-slate-900 text-white py-2 px-4 rounded-md font-medium hover:bg-slate-800 disabled:opacity-50 transition-colors"
-                >
-                    {loading ? "Creating..." : "Create Period"}
-                </button>
-            </form>
-        </div>
+                    <Button
+                        type="submit"
+                        disabled={loading}
+                        className="w-full"
+                    >
+                        {loading ? "Creating..." : "Create Period"}
+                    </Button>
+                </form>
+            </CardContent>
+        </Card>
     );
 }

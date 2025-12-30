@@ -1,4 +1,5 @@
 import * as React from "react"
+import { Loader2 } from "lucide-react"
 import { Slot } from "@radix-ui/react-slot"
 import { cn } from "@/lib/utils"
 
@@ -16,13 +17,13 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
 
         // Variant Styles
         const variants = {
-            default: "bg-slate-900 text-slate-50 hover:bg-slate-900/90 shadow-sm",
-            destructive: "bg-red-600 text-slate-50 hover:bg-red-600/90 shadow-sm",
-            outline: "border border-slate-200 bg-white hover:bg-slate-100 hover:text-slate-900 shadow-sm",
-            secondary: "bg-slate-100 text-slate-900 hover:bg-slate-100/80",
+            default: "bg-slate-900 text-slate-50 hover:bg-slate-800 shadow-md hover:shadow-lg transition-all hover:-translate-y-0.5",
+            destructive: "bg-red-500 text-slate-50 hover:bg-red-600 shadow-sm hover:shadow-md",
+            outline: "border border-slate-200 bg-white hover:bg-slate-50 hover:text-slate-900 shadow-sm hover:border-slate-300",
+            secondary: "bg-slate-100 text-slate-900 hover:bg-slate-200 shadow-sm",
             ghost: "hover:bg-slate-100 hover:text-slate-900",
-            link: "text-slate-900 underline-offset-4 hover:underline",
-            white: "bg-white text-slate-900 border border-slate-200 shadow-sm hover:bg-slate-50"
+            link: "text-blue-600 underline-offset-4 hover:underline",
+            white: "bg-white text-slate-900 border border-slate-200 shadow-sm hover:bg-slate-50 hover:shadow-md"
         }
 
         // Size Styles
@@ -36,7 +37,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         return (
             <Comp
                 className={cn(
-                    "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
+                    "inline-flex items-center justify-center whitespace-nowrap rounded-lg text-sm font-medium ring-offset-white transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 active:scale-[0.98]",
                     variants[variant],
                     sizes[size],
                     className
@@ -47,8 +48,8 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
             >
                 {isLoading ? (
                     <span className="mr-2 flex items-center gap-2">
-                        {/* Static loading dots, or "Processing..." text. Given "No Animations" rule, text is safest */}
-                        <span className="text-xs uppercase tracking-wider font-semibold opacity-70">Processing...</span>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <span className="text-xs font-semibold">Processing...</span>
                     </span>
                 ) : children}
             </Comp>

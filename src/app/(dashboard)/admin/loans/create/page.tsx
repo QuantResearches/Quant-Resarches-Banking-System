@@ -8,6 +8,8 @@ import { Card, CardContent } from "@/components/ui/Card";
 import { Label } from "@/components/ui/Label";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
+import CurrencyInput from "@/components/ui/CurrencyInput";
+import { Select } from "@/components/ui/Select";
 import { useStatusPopup } from "@/hooks/useStatusPopup";
 
 export default function CreateLoanPage() {
@@ -85,9 +87,8 @@ export default function CreateLoanPage() {
                         <div className="space-y-2">
                             <Label>Select Customer</Label>
                             <div className="relative">
-                                <select
+                                <Select
                                     required
-                                    className="w-full p-2.5 bg-white border border-slate-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none appearance-none font-medium text-slate-700"
                                     value={formData.customer_id}
                                     onChange={e => setFormData({ ...formData, customer_id: e.target.value })}
                                 >
@@ -95,7 +96,7 @@ export default function CreateLoanPage() {
                                     {customers.map(c => (
                                         <option key={c.id} value={c.id}>{c.full_name} ({c.email})</option>
                                     ))}
-                                </select>
+                                </Select>
                             </div>
                         </div>
 
@@ -109,9 +110,8 @@ export default function CreateLoanPage() {
                                     <span className="font-semibold">Please run database seed.</span>
                                 </div>
                             ) : (
-                                <select
+                                <Select
                                     required
-                                    className="w-full p-2.5 bg-white border border-slate-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none appearance-none font-medium text-slate-700"
                                     value={formData.product_id}
                                     onChange={e => setFormData({ ...formData, product_id: e.target.value })}
                                 >
@@ -121,7 +121,7 @@ export default function CreateLoanPage() {
                                             {p.name} ({Number(p.interest_rate_min)}% - {Number(p.interest_rate_max)}%)
                                         </option>
                                     ))}
-                                </select>
+                                </Select>
                             )}
                         </div>
 
@@ -152,15 +152,14 @@ export default function CreateLoanPage() {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="space-y-2">
                                 <Label>Requested Amount (₹)</Label>
-                                <Input
-                                    type="number"
+                                <CurrencyInput
                                     required
                                     min={selectedProduct ? Number(selectedProduct.min_amount) : 0}
                                     max={selectedProduct ? Number(selectedProduct.max_amount) : undefined}
                                     className="font-mono"
                                     placeholder="0.00"
                                     value={formData.amount}
-                                    onChange={e => setFormData({ ...formData, amount: e.target.value })}
+                                    onValueChange={val => setFormData({ ...formData, amount: val })}
                                 />
                             </div>
                             <div className="space-y-2">

@@ -5,7 +5,7 @@ import { authOptions } from "@/lib/auth";
 
 export async function POST(
     req: Request,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     const session = await getServerSession(authOptions);
     if (!session || (session.user.role !== "admin" && session.user.role !== "finance")) {
@@ -13,7 +13,7 @@ export async function POST(
     }
 
     try {
-        const { id } = params;
+        const { id } = await params;
 
         // 1. Fetch Loan
         const loan = await prisma.loan.findUnique({ where: { id } });

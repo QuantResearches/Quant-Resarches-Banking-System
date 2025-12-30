@@ -610,6 +610,7 @@ model CustomerProfile {
   vault_reference_id  String?    // Link to Aadhaar Data Vault
   pan_encrypted       String?    // Column-level encryption
   aadhaar_number_encrypted String? // Column-level encryption (12 digits)
+  profile_picture     String?    // URL/Path to stored image
 
   created_at          DateTime   @default(now())
   updated_at          DateTime   @updatedAt
