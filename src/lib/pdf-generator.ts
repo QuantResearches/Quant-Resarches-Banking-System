@@ -49,18 +49,18 @@ export const generateStatementPDF = (account: any, transactions: any[], period: 
     doc.rect(130, 40, pageWidth - 144, 35, "F");
     doc.setFontSize(10);
     doc.text("Account Summary", 135, 48);
-    doc.text(`Total Credits: +${totalCredits.toFixed(2)}`, 135, 55);
-    doc.text(`Total Debits: -${totalDebits.toFixed(2)}`, 135, 60);
+    doc.text(`Total Credits: +${totalCredits.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}`, 135, 55);
+    doc.text(`Total Debits: -${totalDebits.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}`, 135, 60);
     doc.setFont("helvetica", "bold");
-    doc.text(`Closing Balance: ${closingBalance.toFixed(2)}`, 135, 70);
+    doc.text(`Closing Balance: ${closingBalance.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}`, 135, 70);
     doc.setFont("helvetica", "normal");
 
     // --- TRANSACTIONS TABLE ---
     const tableData = transactions.map((t: any) => [
         new Date(t.effective_date).toLocaleDateString(),
         t.description || t.reference || "-",
-        t.txn_type === "debit" ? `-${Number(t.amount).toFixed(2)}` : "",
-        t.txn_type === "credit" ? `+${Number(t.amount).toFixed(2)}` : "",
+        t.txn_type === "debit" ? `-${Number(t.amount).toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}` : "",
+        t.txn_type === "credit" ? `+${Number(t.amount).toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}` : "",
         // Running balance column is hard without initial balance. Skipping.
         t.status
     ]);
