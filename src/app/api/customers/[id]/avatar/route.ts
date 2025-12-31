@@ -6,11 +6,7 @@ import prisma from "@/lib/prisma";
 import { put, del } from "@vercel/blob";
 import path from "path";
 
-export const config = {
-    api: {
-        bodyParser: false,
-    },
-};
+
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
     const session = await getServerSession(authOptions);
