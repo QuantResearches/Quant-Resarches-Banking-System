@@ -62,10 +62,9 @@ export default async function CustomerDetailPage(props: { params: Promise<{ id: 
                                 {customer.full_name}
                             </h1>
                             <div className="flex gap-4">
-                                <p className="text-sm text-slate-500 font-mono mt-1">ID: {customer.id}</p>
                                 {/* @ts-ignore */}
                                 <p className="text-sm text-blue-600 font-mono mt-1 font-bold">CIF: {customer.cif_number || "N/A"}</p>
-                            </div>
+                            </div>  
                             <div className="flex items-center gap-4 mt-2 text-sm text-slate-500">
                                 <span className="flex items-center gap-1.5"><Mail className="w-3.5 h-3.5" /> {maskEmail(customer.email)}</span>
                                 <span className="flex items-center gap-1.5"><Phone className="w-3.5 h-3.5" /> {maskPhone(customer.phone)}</span>

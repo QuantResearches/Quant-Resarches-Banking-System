@@ -178,9 +178,9 @@ export default function EditCustomerPage({ params }: { params: Promise<{ id: str
                                         defaultValue={customer.profile?.gender || ""}
                                     >
                                         <option value="">Select Gender</option>
-                                        <option value="Male">Male</option>
-                                        <option value="Female">Female</option>
-                                        <option value="Other">Other</option>
+                                        <option value="MALE">Male</option>
+                                        <option value="FEMALE">Female</option>
+                                        <option value="OTHER">Other</option>
                                     </Select>
                                 </div>
 
@@ -191,10 +191,10 @@ export default function EditCustomerPage({ params }: { params: Promise<{ id: str
                                         defaultValue={customer.profile?.marital_status || ""}
                                     >
                                         <option value="">Select Status</option>
-                                        <option value="Single">Single</option>
-                                        <option value="Married">Married</option>
-                                        <option value="Divorced">Divorced</option>
-                                        <option value="Widowed">Widowed</option>
+                                        <option value="SINGLE">Single</option>
+                                        <option value="MARRIED">Married</option>
+                                        <option value="DIVORCED">Divorced</option>
+                                        <option value="WIDOWED">Widowed</option>
                                     </Select>
                                 </div>
                                 <div className="space-y-2">
