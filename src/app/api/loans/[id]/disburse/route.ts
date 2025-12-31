@@ -35,8 +35,44 @@ export async function POST(
 
         // 2. Execute Disbursement Transaction (Atomically)
         const result = await prisma.$transaction(async (tx) => {
-            // A. Update Loan Status
-            const activeLoan = await tx.loan.update({
+            // A. Find or Create Bank Capital Account (Source of Funds)
+            // In a real system, this ID would be in env vars or config. Finding by name for MVP robustness.
+            let capitalAccount = await tx.account.findFirst({
+                where: { account_type: "internal", customer: { email: "admin@quant.com" } }, // Assuming admin owns system accounts
+                include: { balance: true }
+            });
+
+            // Auto-seed Capital Account if missing (for first-run only) - Self-Healing
+            if (!capitalAccount) {
+                // Try to find the admin customer first
+                let adminCustomer = await tx.customer.findFirst({ where: { email: "admin@quant.com" } });
+                // If no admin customer (unlikely if logged in, but possible in seed data), use the first available or create dummy
+                if (!adminCustomer) {
+                    adminCustomer = await tx.customer.create({
+                        data: { email: "admin@quant.com", full_name: "System Administrator", phone: "0000000000", address: "HQ", created_by: session.user.id }
+                    });
+                }
+
+                capitalAccount = await tx.account.create({
+                    data: {
+                        customer_id: adminCustomer.id,
+                        account_type: "internal",
+                        created_by: session.user.id,
+                        balance: { create: { balance: 10000000 } } // Seed with 1 Crore Capital
+                    },
+                    include: { balance: true }
+                });
+            }
+
+            const principal = Number(loan.approved_amount);
+
+            // B. Solvency Check
+            if (!capitalAccount.balance || Number(capitalAccount.balance.balance) < principal) {
+                throw new Error(`Bank Capital Insufficient. Available: ${capitalAccount.balance?.balance}, Required: ${principal}`);
+            }
+
+            // C. Update Loan Status
+            const loanUpdate = await tx.loan.update({
                 where: { id },
                 data: {
                     status: "ACTIVE",
@@ -44,16 +80,9 @@ export async function POST(
                 }
             });
 
-            // B. Generate Repayment Schedule (Simple Amortization / Flat for MVP)
-            // Using Flat Interest for simplicity in MVP, or reading from product type
-            const principal = Number(activeLoan.approved_amount);
-            const rate = Number(activeLoan.interest_rate) / 100;
-            const tenure = activeLoan.tenure_months;
-
-            // Monthly Installment (Simplified: Principal/N + Interest on outstanding)
-            // Let's use EMI formula for Reducing Balance if active, else standard.
-            // MVP: Simple Principal + Interest Split equally
-
+            // D. Generate Repayment Schedule
+            const rate = Number(loanUpdate.interest_rate) / 100;
+            const tenure = loanUpdate.tenure_months;
             const totalInterest = principal * rate * (tenure / 12);
             const totalAmount = principal + totalInterest;
             const emi = totalAmount / tenure;
@@ -73,54 +102,67 @@ export async function POST(
                 });
             }
 
-            // C. Credit Customer Account
-            // 1. Create Transaction Record
-            const txn = await tx.transaction.create({
+            // E. Double-Entry Bookkeeping
+
+            // Debit: Bank Capital (Money leaves bank)
+            await tx.transaction.create({
                 data: {
-                    account_id: depositAccount.id,
-                    txn_type: "credit",
+                    account_id: capitalAccount.id,
+                    txn_type: "debit",
                     amount: principal,
                     reference: `LOAN-DISB-${loan.id.slice(0, 8)}`,
-                    description: `Loan Disbursement: ${loan.product.name}`,
+                    description: `Disbursement: ${loan.product.name} to ${loan.customer.full_name}`,
                     status: "POSTED",
                     channel: "SYSTEM",
                     created_by: session.user.id
                 }
             });
 
-            // 2. Update Balance
-            await tx.accountBalance.upsert({
-                where: { account_id: depositAccount.id },
-                update: {
-                    balance: { increment: principal },
-                    last_calculated_at: new Date()
-                },
-                create: {
+            await tx.accountBalance.update({
+                where: { account_id: capitalAccount.id },
+                data: { balance: { decrement: principal }, last_calculated_at: new Date() }
+            });
+
+            // Credit: Customer Wallet (Money enters customer wallet)
+            await tx.transaction.create({
+                data: {
                     account_id: depositAccount.id,
-                    balance: principal,
-                    last_calculated_at: new Date()
+                    txn_type: "credit",
+                    amount: principal,
+                    reference: `LOAN-DISB-${loan.id.slice(0, 8)}`,
+                    description: `Loan Disbursement Received`,
+                    status: "POSTED",
+                    channel: "SYSTEM",
+                    created_by: session.user.id
+                    // related_account_id removed as it does not exist in schema
                 }
             });
 
-            // D. Audit Log
+            await tx.accountBalance.update({
+                where: { account_id: depositAccount.id },
+                data: { balance: { increment: principal }, last_calculated_at: new Date() }
+            });
+
+            // F. Audit Log
             await tx.auditLog.create({
                 data: {
                     user_id: session.user.id,
                     action: "LOAN_DISBURSE",
                     entity_type: "LOAN",
                     entity_id: id,
-                    details: `Disbursed ${principal} to account ${depositAccount.id}`,
+                    details: `Disbursed ${principal} from Capital ${capitalAccount.id} to Wallet ${depositAccount.id}`,
                     ip_address: "127.0.0.1"
                 }
             });
 
-            return activeLoan;
+            return loanUpdate;
         });
 
         return NextResponse.json({ success: true, loan: result });
 
     } catch (error) {
         console.error("Loan Disbursement Error:", error);
-        return NextResponse.json({ error: "Failed to disburse loan" }, { status: 500 });
+        const errorMessage = error instanceof Error ? error.message : "Failed to disburse loan";
+        return NextResponse.json({ error: errorMessage }, { status: 500 });
     }
 }

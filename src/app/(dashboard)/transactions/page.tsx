@@ -7,6 +7,7 @@ import CopyableText from "@/components/ui/CopyableText";
 import { formatCurrency } from "@/lib/utils";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/Table";
 import { Card } from "@/components/ui/Card";
+import DownloadGlobalLedger from "@/components/transactions/DownloadGlobalLedger";
 
 export const dynamic = 'force-dynamic';
 
@@ -35,10 +36,13 @@ export default async function TransactionsPage() {
                     <p className="text-sm text-slate-500 mt-1">Global audit trail of all financial movements.</p>
                 </div>
                 {canCreate && (
-                    <Link href="/transactions/create" className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-slate-950 disabled:pointer-events-none disabled:opacity-50 bg-blue-600 text-white shadow hover:bg-blue-700 h-9 px-4 py-2">
-                        <Plus className="w-4 h-4 mr-2" />
-                        New Transaction
-                    </Link>
+                    <div className="flex items-center gap-2">
+                        <DownloadGlobalLedger />
+                        <Link href="/transactions/create" className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-slate-950 disabled:pointer-events-none disabled:opacity-50 bg-blue-600 text-white shadow hover:bg-blue-700 h-9 px-4 py-2">
+                            <Plus className="w-4 h-4 mr-2" />
+                            New Transaction
+                        </Link>
+                    </div>
                 )}
             </div>
 

@@ -19,7 +19,9 @@ export default async function AccountDetails(props: { params: Promise<{ id: stri
     const account = await prisma.account.findUnique({
         where: { id: params.id },
         include: {
-            customer: true,
+            customer: {
+                include: { profile: true }
+            },
             transactions: {
                 orderBy: { created_at: 'desc' },
                 take: 50
@@ -52,8 +54,14 @@ export default async function AccountDetails(props: { params: Promise<{ id: stri
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                 <div className="bg-white p-6 border border-gray-200">
-                    <p className="text-xs text-gray-500 uppercase font-bold mb-2">Account ID</p>
-                    <CopyableText text={account.id} label="Account ID" />
+                    <p className="text-xs text-gray-500 uppercase font-bold mb-2">Account Number (SBI Format)</p>
+                    <p className="text-xl font-mono font-medium text-gray-900 tracking-wider">
+                        {account.account_number || "N/A"}
+                    </p>
+                    <div className="mt-2 pt-2 border-t border-gray-100">
+                        <p className="text-[10px] text-gray-400 uppercase">System Ref ID</p>
+                        <CopyableText text={account.id} label="Ref ID" className="text-xs text-gray-400" />
+                    </div>
                 </div>
                 <div className="bg-white p-6 border border-gray-200">
                     <p className="text-xs text-gray-500 uppercase font-bold mb-2">Customer</p>

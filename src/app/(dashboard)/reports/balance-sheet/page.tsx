@@ -1,7 +1,10 @@
 
 import prisma from "@/lib/prisma";
+import Link from "next/link";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { Card } from "@/components/ui/Card";
+import { Table, TableBody, TableCell, TableRow } from "@/components/ui/Table";
 
 export const dynamic = 'force-dynamic';
 
@@ -56,115 +59,123 @@ export default async function BalanceSheetPage() {
 
 
     return (
-        <div className="space-y-8 max-w-5xl mx-auto">
-            <div className="flex justify-between items-center border-b border-gray-200 pb-4">
+        <div className="space-y-8 max-w-6xl mx-auto animate-in fade-in duration-500">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 pb-6">
                 <div>
-                    <a href="/reports" className="text-sm text-blue-600 hover:underline mb-2 inline-block">&larr; Back to Reports</a>
-                    <h1 className="text-2xl font-bold text-slate-900">Balance Sheet</h1>
-                    <p className="text-slate-500 text-sm">General Ledger Statement</p>
+                    <Link href="/reports" className="group flex items-center text-sm font-medium text-blue-600 hover:text-blue-700 mb-2">
+                        <span className="mr-1 group-hover:-translate-x-1 transition-transform">&larr;</span> Back to Reports
+                    </Link>
+                    <h1 className="text-2xl font-semibold text-slate-900 tracking-tight">Balance Sheet</h1>
+                    <p className="text-sm text-slate-500 mt-1">General Ledger Statement</p>
                 </div>
-                <div className="text-right">
-                    <div className="text-sm font-medium text-slate-500 uppercase tracking-wider">Net Position</div>
+                <Card className="px-6 py-3 bg-white shadow-sm border-slate-200 flex flex-col items-end">
+                    <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Net Position</div>
                     <div className={`text-2xl font-mono font-bold ${netPosition >= 0 ? 'text-slate-900' : 'text-red-600'}`}>
                         {netPosition.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}
                     </div>
-                </div>
+                </Card>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
 
                 {/* ASSETS */}
-                <div className="bg-white border border-gray-200 shadow-sm">
-                    <div className="px-6 py-4 border-b border-gray-200 bg-emerald-50 flex justify-between">
-                        <h2 className="text-sm font-bold text-emerald-900 uppercase">Assets</h2>
-                        <span className="font-mono font-bold text-emerald-900">
+                <Card>
+                    <div className="px-6 py-4 border-b border-emerald-100 bg-emerald-50/50 flex justify-between items-center">
+                        <h2 className="text-sm font-bold text-emerald-900 uppercase tracking-wider">Assets</h2>
+                        <span className="font-mono font-bold text-emerald-900 text-lg">
                             {totals.asset.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}
                         </span>
                     </div>
-                    <table className="w-full text-sm">
-                        <tbody className="divide-y divide-gray-100">
-                            {groups.asset.map((acc) => (
-                                <tr key={acc.id} className="hover:bg-gray-50">
-                                    <td className="px-6 py-3 text-gray-700">
-                                        <span className="text-gray-400 mr-2 text-xs">{acc.code}</span>
-                                        {acc.name}
-                                    </td>
-                                    <td className="px-6 py-3 text-right font-mono font-medium text-gray-900">
-                                        {acc.balance.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}
-                                    </td>
-                                </tr>
-                            ))}
-                            {groups.asset.length === 0 && (
-                                <tr><td colSpan={2} className="px-6 py-4 text-gray-400 italic text-center">No assets recorded</td></tr>
-                            )}
-                        </tbody>
-                    </table>
-                </div>
+                    <div className="relative w-full overflow-auto">
+                        <Table>
+                            <TableBody>
+                                {groups.asset.map((acc) => (
+                                    <TableRow key={acc.id} className="hover:bg-slate-50">
+                                        <TableCell className="font-medium text-slate-700">
+                                            <span className="text-slate-400 font-mono text-xs mr-3">{acc.code}</span>
+                                            {acc.name}
+                                        </TableCell>
+                                        <TableCell className="text-right font-mono font-medium text-slate-900">
+                                            {acc.balance.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                                {groups.asset.length === 0 && (
+                                    <TableRow><TableCell colSpan={2} className="h-24 text-center text-slate-500 italic">No assets recorded</TableCell></TableRow>
+                                )}
+                            </TableBody>
+                        </Table>
+                    </div>
+                </Card>
 
                 {/* LIABILITIES */}
-                <div className="bg-white border border-gray-200 shadow-sm">
-                    <div className="px-6 py-4 border-b border-gray-200 bg-red-50 flex justify-between">
-                        <h2 className="text-sm font-bold text-red-900 uppercase">Liabilities</h2>
-                        <span className="font-mono font-bold text-red-900">
+                <Card>
+                    <div className="px-6 py-4 border-b border-red-100 bg-red-50/50 flex justify-between items-center">
+                        <h2 className="text-sm font-bold text-red-900 uppercase tracking-wider">Liabilities</h2>
+                        <span className="font-mono font-bold text-red-900 text-lg">
                             {totals.liability.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}
                         </span>
                     </div>
-                    <table className="w-full text-sm">
-                        <tbody className="divide-y divide-gray-100">
-                            {groups.liability.map((acc) => (
-                                <tr key={acc.id} className="hover:bg-gray-50">
-                                    <td className="px-6 py-3 text-gray-700">
-                                        <span className="text-gray-400 mr-2 text-xs">{acc.code}</span>
-                                        {acc.name}
-                                    </td>
-                                    <td className="px-6 py-3 text-right font-mono font-medium text-gray-900">
-                                        {acc.balance.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}
-                                    </td>
-                                </tr>
-                            ))}
-                            {groups.liability.length === 0 && (
-                                <tr><td colSpan={2} className="px-6 py-4 text-gray-400 italic text-center">No liabilities recorded</td></tr>
-                            )}
-                        </tbody>
-                    </table>
-                </div>
+                    <div className="relative w-full overflow-auto">
+                        <Table>
+                            <TableBody>
+                                {groups.liability.map((acc) => (
+                                    <TableRow key={acc.id} className="hover:bg-slate-50">
+                                        <TableCell className="font-medium text-slate-700">
+                                            <span className="text-slate-400 font-mono text-xs mr-3">{acc.code}</span>
+                                            {acc.name}
+                                        </TableCell>
+                                        <TableCell className="text-right font-mono font-medium text-slate-900">
+                                            {acc.balance.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                                {groups.liability.length === 0 && (
+                                    <TableRow><TableCell colSpan={2} className="h-24 text-center text-slate-500 italic">No liabilities recorded</TableCell></TableRow>
+                                )}
+                            </TableBody>
+                        </Table>
+                    </div>
+                </Card>
             </div>
 
             {/* P&L SUMMARY */}
-            <div className="bg-white border border-gray-200 shadow-sm max-w-2xl">
-                <div className="px-6 py-4 border-b border-gray-200 bg-slate-50 flex justify-between">
-                    <h2 className="text-sm font-bold text-slate-900 uppercase">Income Statement (YTD)</h2>
-                    <span className={`font-mono font-bold ${netIncome >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+            <Card className="max-w-2xl">
+                <div className="px-6 py-4 border-b border-slate-200 bg-slate-50/50 flex justify-between items-center">
+                    <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider">Income Statement (YTD) Summary</h2>
+                    <span className={`font-mono font-bold ${netIncome >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
                         {netIncome.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}
                     </span>
                 </div>
-                <table className="w-full text-sm">
-                    <tbody className="divide-y divide-gray-100">
-                        <tr className="bg-green-50/50">
-                            <td className="px-6 py-3 font-medium text-gray-700">Total Income</td>
-                            <td className="px-6 py-3 text-right font-mono text-green-700">
-                                {totals.income.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}
-                            </td>
-                        </tr>
-                        {groups.income.map((acc) => (
-                            <tr key={acc.id} className="hover:bg-gray-50">
-                                <td className="px-6 py-3 text-gray-500 pl-10 text-xs">
-                                    {acc.code} - {acc.name}
-                                </td>
-                                <td className="px-6 py-3 text-right font-mono text-xs text-gray-500">
-                                    {acc.balance.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}
-                                </td>
-                            </tr>
-                        ))}
-                        <tr className="bg-red-50/50">
-                            <td className="px-6 py-3 font-medium text-gray-700">Total Expenses</td>
-                            <td className="px-6 py-3 text-right font-mono text-red-700">
-                                {totals.expense.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
+                <div className="relative w-full overflow-auto">
+                    <Table>
+                        <TableBody>
+                            <TableRow className="bg-emerald-50/30 hover:bg-emerald-50/50">
+                                <TableCell className="font-medium text-slate-900">Total Income</TableCell>
+                                <TableCell className="text-right font-mono font-bold text-emerald-700">
+                                    {totals.income.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}
+                                </TableCell>
+                            </TableRow>
+                            {groups.income.map((acc) => (
+                                <TableRow key={acc.id} className="hover:bg-slate-50">
+                                    <TableCell className="text-xs text-slate-500 pl-8">
+                                        {acc.code} - {acc.name}
+                                    </TableCell>
+                                    <TableCell className="text-right font-mono text-xs text-slate-500">
+                                        {acc.balance.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                            <TableRow className="bg-red-50/30 hover:bg-red-50/50 border-t border-slate-100">
+                                <TableCell className="font-medium text-slate-900">Total Expenses</TableCell>
+                                <TableCell className="text-right font-mono font-bold text-red-700">
+                                    {totals.expense.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}
+                                </TableCell>
+                            </TableRow>
+                        </TableBody>
+                    </Table>
+                </div>
+            </Card>
         </div>
     );
 }

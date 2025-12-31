@@ -8,7 +8,7 @@ import { Card, CardContent } from "@/components/ui/Card";
 import { Label } from "@/components/ui/Label";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
-import CurrencyInput from "@/components/ui/CurrencyInput";
+import { CurrencyInput } from "@/components/ui/CurrencyInput";
 import { Select } from "@/components/ui/Select";
 import { useStatusPopup } from "@/hooks/useStatusPopup";
 

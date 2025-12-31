@@ -71,7 +71,6 @@ export default function AccountForm({ customers }: Props) {
                     <option value="savings">Savings Account</option>
                     <option value="current">Current Account</option>
                     <option value="wallet">Digital Wallet</option>
-                    <option value="internal">Internal Account</option>
                 </Select>
             </div>
 

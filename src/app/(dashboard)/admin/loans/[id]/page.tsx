@@ -96,32 +96,57 @@ export default async function LoanDetailPage(props: { params: Promise<{ id: stri
                                         <th className="px-6 py-3 w-10">#</th>
                                         <th className="px-6 py-3">Due Date</th>
                                         <th className="px-6 py-3">Total Due</th>
+                                        <th className="px-6 py-3">Paid</th>
                                         <th className="px-6 py-3">Principal</th>
                                         <th className="px-6 py-3">Interest</th>
                                         <th className="px-6 py-3 text-right">Status</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-100">
-                                    {loan.repayments.map((rp: any, index: number) => (
-                                        <tr key={rp.id}>
-                                            <td className="px-6 py-3 text-gray-400">{index + 1}</td>
-                                            <td className="px-6 py-3">{new Date(rp.due_date).toLocaleDateString()}</td>
-                                            <td className="px-6 py-3 font-medium text-gray-900">
-                                                {Number(rp.amount_due).toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}
-                                            </td>
-                                            <td className="px-6 py-3 text-gray-500">
-                                                {Number(rp.principal_component).toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}
-                                            </td>
-                                            <td className="px-6 py-3 text-gray-500">
-                                                {Number(rp.interest_component).toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}
-                                            </td>
-                                            <td className="px-6 py-3 text-right">
-                                                <span className={`px-2 py-0.5 rounded text-xs border ${rp.status === 'PAID' ? 'bg-green-50 border-green-200 text-green-700' : 'bg-gray-50 border-gray-200 text-gray-600'}`}>
-                                                    {rp.status}
-                                                </span>
-                                            </td>
-                                        </tr>
-                                    ))}
+                                    {loan.repayments.map((rp: any, index: number) => {
+                                        const getStatusColor = (status: string) => {
+                                            switch (status) {
+                                                case 'PAID': return 'bg-emerald-50 text-emerald-700 border-emerald-200';
+                                                case 'PARTIAL': return 'bg-amber-50 text-amber-700 border-amber-200';
+                                                case 'PENDING': return 'bg-slate-50 text-slate-700 border-slate-200';
+                                                case 'OVERDUE': return 'bg-red-50 text-red-700 border-red-200';
+                                                default: return 'bg-gray-50 text-gray-700 border-gray-200';
+                                            }
+                                        };
+
+                                        const getAmountColor = (status: string) => {
+                                            switch (status) {
+                                                case 'PAID': return 'text-emerald-600';
+                                                case 'PARTIAL': return 'text-amber-600';
+                                                case 'PENDING': return 'text-slate-400';
+                                                default: return 'text-gray-500';
+                                            }
+                                        };
+
+                                        return (
+                                            <tr key={rp.id}>
+                                                <td className="px-6 py-3 text-gray-400">{index + 1}</td>
+                                                <td className="px-6 py-3">{new Date(rp.due_date).toLocaleDateString()}</td>
+                                                <td className="px-6 py-3 font-medium text-gray-900">
+                                                    {Number(rp.amount_due).toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}
+                                                </td>
+                                                <td className={`px-6 py-3 font-medium ${getAmountColor(rp.status)}`}>
+                                                    {Number(rp.amount_paid).toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}
+                                                </td>
+                                                <td className="px-6 py-3 text-gray-500">
+                                                    {Number(rp.principal_component).toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}
+                                                </td>
+                                                <td className="px-6 py-3 text-gray-500">
+                                                    {Number(rp.interest_component).toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}
+                                                </td>
+                                                <td className="px-6 py-3 text-right">
+                                                    <span className={`px-2 py-0.5 rounded text-xs border ${getStatusColor(rp.status)}`}>
+                                                        {rp.status}
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
                                 </tbody>
                             </table>
                         ) : (

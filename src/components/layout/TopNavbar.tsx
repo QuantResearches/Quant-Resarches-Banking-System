@@ -22,7 +22,8 @@ import {
     CheckCircle,
     Wallet,
     PieChart,
-    ChevronDown
+    ChevronDown,
+    Landmark
 } from "lucide-react";
 import ConfirmationModal from "@/components/ui/ConfirmationModal";
 import NotificationDropdown from "./NotificationDropdown";
@@ -55,6 +56,7 @@ export default function TopNavbar() {
         { name: "Reconciliation", href: "/reconciliation", icon: ArrowRightLeft, roles: ["admin", "finance", "auditor"] },
         { name: "Compliance", href: "/compliance", icon: Shield, roles: ["admin", "compliance"] },
         { name: "Reports", href: "/reports", icon: FileText },
+        { name: "Treasury", href: "/admin/treasury", icon: Landmark, roles: ["admin", "finance"] },
     ];
 
     // Persist links during loading to prevent flicker (optimistic) or show skeleton

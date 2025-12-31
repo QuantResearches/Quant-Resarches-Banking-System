@@ -5,7 +5,7 @@ import { authOptions } from "@/lib/auth";
 
 export async function POST(
     req: Request,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     const session = await getServerSession(authOptions);
     if (!session || (session.user.role !== "admin" && session.user.role !== "finance")) {
@@ -13,7 +13,7 @@ export async function POST(
     }
 
     try {
-        const { id } = params;
+        const { id } = await params;
         const body = await req.json();
         const { amount } = body;
 
@@ -25,6 +25,7 @@ export async function POST(
         const loan = await prisma.loan.findUnique({
             where: { id },
             include: {
+                product: true,
                 repayments: {
                     where: { status: { in: ["PENDING", "PARTIAL", "OVERDUE"] } },
                     orderBy: { due_date: "asc" }
@@ -47,14 +48,41 @@ export async function POST(
 
         // 2. Execute Repayment (Atomically)
         const result = await prisma.$transaction(async (tx) => {
-            // A. Debit Wallet
+            // A. Find Real Capital Account (To receive funds)
+            let capitalAccount = await tx.account.findFirst({
+                where: { account_type: "internal", customer: { email: "admin@quant.com" } }
+            });
+
+            // Fallback (Should ideally exist from disbursement, but for safety)
+            if (!capitalAccount) {
+                // Try to find the admin customer first
+                let adminCustomer = await tx.customer.findFirst({ where: { email: "admin@quant.com" } });
+                if (!adminCustomer) {
+                    adminCustomer = await tx.customer.create({
+                        data: { email: "admin@quant.com", full_name: "System Administrator", phone: "0000000000", address: "HQ", created_by: session.user.id }
+                    });
+                }
+                capitalAccount = await tx.account.create({
+                    data: {
+                        customer_id: adminCustomer.id,
+                        account_type: "internal",
+                        created_by: session.user.id,
+                        balance: { create: { balance: 10000000 } }
+                    },
+                    include: { balance: true }
+                });
+            }
+
+            // B. Double-Entry: Debit Customer -> Credit Bank Capital
+
+            // 1. Debit Customer (Money Leaves Wallet)
             await tx.transaction.create({
                 data: {
                     account_id: wallet.id,
                     txn_type: "debit",
                     amount: amount,
                     reference: `LOAN-REPAY-${id.slice(0, 8)}`,
-                    description: `Repayment for Loan ${loan.product_id ? "" : ""}`,
+                    description: `Repayment for Loan ${loan.product?.name || ""}`,
                     status: "POSTED",
                     channel: "SYSTEM",
                     created_by: session.user.id
@@ -64,6 +92,25 @@ export async function POST(
             await tx.accountBalance.update({
                 where: { account_id: wallet.id },
                 data: { balance: { decrement: amount } }
+            });
+
+            // 2. Credit Bank Capital (Money Returns to Bank)
+            await tx.transaction.create({
+                data: {
+                    account_id: capitalAccount.id,
+                    txn_type: "credit",
+                    amount: amount,
+                    reference: `LOAN-REPAY-${id.slice(0, 8)}`,
+                    description: `Repayment Collection from ${loan.customer.full_name}`,
+                    status: "POSTED",
+                    channel: "SYSTEM",
+                    created_by: session.user.id
+                }
+            });
+
+            await tx.accountBalance.update({
+                where: { account_id: capitalAccount.id },
+                data: { balance: { increment: amount }, last_calculated_at: new Date() }
             });
 
             // B. Waterfall Logic (Distribute amount to repayments)
@@ -108,6 +155,7 @@ export async function POST(
 
     } catch (error) {
         console.error("Loan Repayment Error:", error);
-        return NextResponse.json({ error: "Failed to process repayment" }, { status: 500 });
+        const errorMessage = error instanceof Error ? error.message : "Unknown error";
+        return NextResponse.json({ error: `Repayment Failed: ${errorMessage}` }, { status: 500 });
     }
 }

@@ -8,7 +8,7 @@ export async function GET(req: Request) {
     const session = await getServerSession(authOptions);
     if (!session) return NextResponse.json([], { status: 401 });
 
-    const role = session.user.role;
+    const role = session?.user?.role;
     const notifications = [];
 
     // 1. Pending Approvals (Admin/Finance only)

@@ -107,6 +107,7 @@ model Session {
 model Customer {
   id         String         @id @default(uuid())
   full_name  String
+  cif_number String?        @unique // 11-digit CIF Format
   email      String         @unique
   phone      String
   address    String
@@ -126,6 +127,7 @@ model Customer {
 model Account { 
   id           String        @id @default(uuid())
   customer_id  String
+  account_number String?       @unique // 11-digit SBI Format
   account_type AccountType
   status       AccountStatus @default(active)
   created_by   String
@@ -609,7 +611,9 @@ model CustomerProfile {
   // Security
   vault_reference_id  String?    // Link to Aadhaar Data Vault
   pan_encrypted       String?    // Column-level encryption
+  pan_hash            String?    @unique // SHA-256 Hash for Uniqueness Check
   aadhaar_number_encrypted String? // Column-level encryption (12 digits)
+  aadhaar_hash        String?    @unique // SHA-256 Hash for Uniqueness Check
   profile_picture     String?    // URL/Path to stored image
 
   created_at          DateTime   @default(now())
@@ -688,4 +692,28 @@ model AuditNote {
   
   @@map("audit_notes")
   @@index([transaction_id])
+}
+
+// --- BANK TREASURY ---
+
+model BankLiability {
+  id              String   @id @default(uuid())
+  lender_name     String
+  reference_id    String?  // External Loan ID / Bond ID
+  
+  principal_amount Decimal @db.Decimal(15, 2)
+  interest_rate    Decimal @db.Decimal(5, 2) // Annual %
+  tenure_months    Int
+  
+  status          String   @default("ACTIVE") // ACTIVE, CLOSED, DEFAULTED
+  
+  disbursed_at    DateTime @default(now())
+  maturity_date   DateTime?
+  
+  created_by      String
+  created_at      DateTime @default(now())
+  
+  // Optional: Link to transaction or account if we want detailed ledger
+  
+  @@map("bank_liabilities")
 }

@@ -55,6 +55,7 @@ export default async function CustomersPage({ searchParams }: Props) {
                         <TableHeader className="bg-slate-50 border-b border-slate-200">
                             <TableRow className="hover:bg-transparent">
                                 <TableHead className="w-[200px] font-semibold text-slate-900">Full Name</TableHead>
+                                <TableHead className="font-semibold text-slate-900">CIF Number</TableHead>
                                 <TableHead className="font-semibold text-slate-900">Email</TableHead>
                                 <TableHead className="font-semibold text-slate-900">Phone</TableHead>
                                 <TableHead className="font-semibold text-slate-900">Status</TableHead>
@@ -68,6 +69,10 @@ export default async function CustomersPage({ searchParams }: Props) {
                                         <Link href={`/customers/${customer.id}`} className="hover:text-blue-600 transition-colors">
                                             {customer.full_name}
                                         </Link>
+                                    </TableCell>
+                                    <TableCell className="text-slate-600 font-mono text-xs">
+                                        {/* @ts-ignore */}
+                                        {customer.cif_number || "-"}
                                     </TableCell>
                                     <TableCell className="text-slate-600">{maskEmail(customer.email)}</TableCell>
                                     <TableCell className="text-slate-600">{maskPhone(customer.phone) || "-"}</TableCell>

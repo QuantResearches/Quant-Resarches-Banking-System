@@ -57,6 +57,7 @@ export default function NotificationDropdown() {
     return (
         <div className="relative" ref={dropdownRef}>
             <button
+                type="button"
                 onClick={() => setIsOpen(!isOpen)}
                 className={`relative p-2 rounded-full transition-colors ${isOpen ? "bg-slate-800 text-white" : "text-slate-400 hover:text-white hover:bg-slate-900"
                     }`}
@@ -70,12 +71,25 @@ export default function NotificationDropdown() {
             {isOpen && (
                 <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-lg shadow-xl border border-slate-200 z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
                     <div className="px-4 py-3 border-b border-slate-100 flex justify-between items-center bg-slate-50/80 backdrop-blur-sm">
-                        <h3 className="text-sm font-semibold text-slate-900">Notifications</h3>
-                        {count > 0 && (
-                            <span className="text-xs px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full font-medium">
-                                {count} new
-                            </span>
-                        )}
+                        <div className="flex items-center gap-2">
+                            <h3 className="text-sm font-semibold text-slate-900">Notifications</h3>
+                            {count > 0 && (
+                                <span className="text-xs px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full font-medium">
+                                    {count} new
+                                </span>
+                            )}
+                        </div>
+                        {/* Explicit Close Button for Mobile/Touch validity */}
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setIsOpen(false);
+                            }}
+                            className="text-slate-400 hover:text-slate-700 p-1 rounded-md hover:bg-slate-200 transition-colors"
+                        >
+                            <span className="sr-only">Close</span>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
+                        </button>
                     </div>
 
                     <div className="max-h-[320px] overflow-y-auto">
@@ -95,7 +109,7 @@ export default function NotificationDropdown() {
                                                 router.push(notif.link);
                                             }
                                         }}
-                                        className={`p-4 hover:bg-slate-50 transition-colors cursor-pointer flex gap-3 ${notif.link ? 'cursor-pointer' : ''}`}
+                                        className={`p-4 hover:bg-slate-50 transition-colors flex gap-3 ${notif.link ? 'cursor-pointer hover:bg-blue-50/50' : ''}`}
                                     >
                                         <div className="mt-0.5">
                                             {notif.type === 'error' && <AlertTriangle size={16} className="text-red-500" />}

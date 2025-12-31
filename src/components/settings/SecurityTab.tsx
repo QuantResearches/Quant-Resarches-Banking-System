@@ -8,6 +8,7 @@ import { Shield, Smartphone, Key, History, AlertTriangle } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import Link from "next/link";
 import ConfirmationModal from "@/components/ui/ConfirmationModal";
+import StatusPopup from "@/components/ui/StatusPopup";
 import {
     Table,
     TableBody,
@@ -34,6 +35,7 @@ export default function SecurityTab({ user, loginHistory }: SecurityTabProps) {
     const router = useRouter();
     const [isDisabling, setIsDisabling] = useState(false);
     const [showDisableConfirm, setShowDisableConfirm] = useState(false);
+    const [status, setStatus] = useState<{ type: 'success' | 'error' | null, message: string | null }>({ type: null, message: null });
 
     const handleDisableClick = () => {
         setShowDisableConfirm(true);
@@ -42,17 +44,21 @@ export default function SecurityTab({ user, loginHistory }: SecurityTabProps) {
     const confirmDisableMFA = async () => {
         setShowDisableConfirm(false);
         setIsDisabling(true);
+        setStatus({ type: null, message: null });
         try {
             const res = await fetch("/api/auth/mfa/disable", { method: "POST" });
             if (!res.ok) throw new Error("Failed to disable MFA");
             router.refresh();
+            setStatus({ type: 'success', message: 'Two-Factor Authentication disabled.' });
         } catch (error) {
             console.error(error);
-            alert("Failed to disable 2FA. Please try again.");
+            setStatus({ type: 'error', message: 'Failed to disable 2FA. Please try again.' });
+            // alert("Failed to disable 2FA. Please try again.");
         } finally {
             setIsDisabling(false);
         }
     };
+
 
     return (
         <div className="space-y-6">
@@ -186,6 +192,12 @@ export default function SecurityTab({ user, loginHistory }: SecurityTabProps) {
                 confirmText="Disable 2FA"
                 isDestructive={true}
                 isLoading={isDisabling}
+            />
+
+            <StatusPopup
+                status={status.type}
+                message={status.message}
+                onClose={() => setStatus({ type: null, message: null })}
             />
         </div>
     );

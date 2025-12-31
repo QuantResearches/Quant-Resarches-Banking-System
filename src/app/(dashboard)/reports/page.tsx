@@ -1,6 +1,10 @@
 import prisma from "@/lib/prisma";
+import Link from "next/link";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { Button } from "@/components/ui/Button";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/Table";
+import { Card } from "@/components/ui/Card";
 
 export const dynamic = 'force-dynamic';
 
@@ -71,162 +75,169 @@ export default async function ReportsPage() {
     const staffList = Object.values(staffStats).sort((a, b) => b.volume - a.volume);
 
     return (
-        <div className="space-y-8">
-            <div className="flex justify-between items-center">
-                <h1 className="text-2xl font-semibold">System Reports</h1>
-                <div className="space-x-3">
-                    <a href="/reports/general-ledger" className="bg-white border border-slate-300 text-slate-700 px-4 py-2 text-sm font-medium hover:bg-slate-50 transition-colors">
-                        General Ledger
-                    </a>
-                    <a href="/reports/profit-loss" className="bg-white border border-slate-300 text-slate-700 px-4 py-2 text-sm font-medium hover:bg-slate-50 transition-colors">
-                        Profit & Loss
-                    </a>
-                    <a href="/reports/balance-sheet" className="bg-slate-900 text-white px-4 py-2 text-sm font-medium hover:bg-slate-800 transition-colors">
-                        Balance Sheet
-                    </a>
+        <div className="space-y-8 animate-in fade-in duration-500">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 pb-6">
+                <div>
+                    <h1 className="text-2xl font-semibold text-slate-900 tracking-tight">System Reports</h1>
+                    <p className="text-sm text-slate-500 mt-1">Financial statements and operational analytics.</p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                    <Link href="/reports/general-ledger">
+                        <Button variant="outline" className="bg-white hover:bg-slate-50">General Ledger</Button>
+                    </Link>
+                    <Link href="/reports/profit-loss">
+                        <Button variant="outline" className="bg-white hover:bg-slate-50">Profit & Loss</Button>
+                    </Link>
+                    <Link href="/reports/balance-sheet">
+                        <Button className="bg-slate-900 text-white hover:bg-slate-800 shadow-sm">Balance Sheet</Button>
+                    </Link>
                 </div>
             </div>
 
             {/* Daily Volume Report */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <div className="bg-white border border-gray-200 h-full">
-                    <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
-                        <h2 className="text-sm font-semibold text-gray-700 uppercase">Transaction Volume (Type)</h2>
+                <Card className="h-full">
+                    <div className="px-6 py-4 border-b border-slate-200 bg-slate-50/50">
+                        <h2 className="text-sm font-semibold text-slate-700 uppercase tracking-wider">Transaction Volume (Type)</h2>
                     </div>
-                    <table className="w-full text-sm text-left">
-                        <thead className="text-gray-500 font-medium border-b border-gray-200">
-                            <tr>
-                                <th className="px-6 py-3">Type</th>
-                                <th className="px-6 py-3 text-right">Count</th>
-                                <th className="px-6 py-3 text-right">Volume</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-200 text-gray-600">
-                            {dailyVolume.map((stat) => (
-                                <tr key={stat.txn_type}>
-                                    <td className="px-6 py-4 capitalize font-medium text-gray-900">{stat.txn_type}</td>
-                                    <td className="px-6 py-4 text-right">{stat._count.id}</td>
-                                    <td className={`px-6 py-4 text-right font-mono font-medium ${stat.txn_type === 'credit' ? 'text-green-600' : 'text-red-600'}`}>
-                                        {Number(stat._sum.amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                    </td>
-                                </tr>
-                            ))}
-                            {dailyVolume.length === 0 && (
-                                <tr><td colSpan={3} className="px-6 py-8 text-center text-gray-500">No transactions today.</td></tr>
-                            )}
-                        </tbody>
-                    </table>
-                </div>
+                    <div className="relative w-full overflow-auto">
+                        <Table>
+                            <TableHeader className="bg-slate-50/50">
+                                <TableRow>
+                                    <TableHead className="font-semibold text-slate-900">Type</TableHead>
+                                    <TableHead className="text-right font-semibold text-slate-900">Count</TableHead>
+                                    <TableHead className="text-right font-semibold text-slate-900">Volume</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {dailyVolume.map((stat) => (
+                                    <TableRow key={stat.txn_type}>
+                                        <TableCell className="capitalize font-medium text-slate-900">{stat.txn_type}</TableCell>
+                                        <TableCell className="text-right text-slate-600">{stat._count.id}</TableCell>
+                                        <TableCell className={`text-right font-mono font-medium ${stat.txn_type === 'credit' ? 'text-emerald-600' : 'text-red-600'}`}>
+                                            {Number(stat._sum.amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                                {dailyVolume.length === 0 && (
+                                    <TableRow><TableCell colSpan={3} className="h-24 text-center text-slate-500">No transactions today.</TableCell></TableRow>
+                                )}
+                            </TableBody>
+                        </Table>
+                    </div>
+                </Card>
 
-                <div className="bg-white border border-gray-200 h-full">
-                    <div className="px-6 py-4 border-b border-gray-200 bg-blue-50">
-                        <h2 className="text-sm font-semibold text-blue-800 uppercase">Staff Performance (Today)</h2>
+                <Card className="h-full">
+                    <div className="px-6 py-4 border-b border-blue-100 bg-blue-50/50">
+                        <h2 className="text-sm font-semibold text-blue-900 uppercase tracking-wider">Staff Performance (Today)</h2>
                     </div>
-                    <table className="w-full text-sm text-left">
-                        <thead className="text-gray-500 font-medium border-b border-gray-200">
-                            <tr>
-                                <th className="px-6 py-3">Staff Member</th>
-                                <th className="px-6 py-3 text-right">Actions</th>
-                                <th className="px-6 py-3 text-right">Volume Processed</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-200 text-gray-600">
-                            {staffList.map((staff) => (
-                                <tr key={staff.email}>
-                                    <td className="px-6 py-4">
-                                        <div className="font-medium text-gray-900">{staff.email}</div>
-                                        <div className="text-xs text-gray-500 capitalize">{staff.role}</div>
-                                    </td>
-                                    <td className="px-6 py-4 text-right">{staff.count}</td>
-                                    <td className="px-6 py-4 text-right font-mono font-medium text-gray-900">
-                                        {staff.volume.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                    </td>
-                                </tr>
-                            ))}
-                            {staffList.length === 0 && (
-                                <tr><td colSpan={3} className="px-6 py-8 text-center text-gray-500">No staff activity today.</td></tr>
-                            )}
-                        </tbody>
-                    </table>
-                </div>
+                    <div className="relative w-full overflow-auto">
+                        <Table>
+                            <TableHeader className="bg-slate-50/50">
+                                <TableRow>
+                                    <TableHead className="font-semibold text-slate-900">Staff Member</TableHead>
+                                    <TableHead className="text-right font-semibold text-slate-900">Actions</TableHead>
+                                    <TableHead className="text-right font-semibold text-slate-900">Volume</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {staffList.map((staff) => (
+                                    <TableRow key={staff.email}>
+                                        <TableCell>
+                                            <div className="font-medium text-slate-900">{staff.email}</div>
+                                            <div className="text-xs text-slate-500 capitalize">{staff.role}</div>
+                                        </TableCell>
+                                        <TableCell className="text-right text-slate-600">{staff.count}</TableCell>
+                                        <TableCell className="text-right font-mono font-medium text-slate-900">
+                                            {staff.volume.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                                {staffList.length === 0 && (
+                                    <TableRow><TableCell colSpan={3} className="h-24 text-center text-slate-500">No staff activity today.</TableCell></TableRow>
+                                )}
+                            </TableBody>
+                        </Table>
+                    </div>
+                </Card>
             </div>
 
             {/* Top Accounts Report - Active Only */}
-            <div className="bg-white border border-gray-200">
-                <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
-                    <h2 className="text-sm font-semibold text-gray-700 uppercase">Top 20 Active High Value Accounts</h2>
+            <Card>
+                <div className="px-6 py-4 border-b border-slate-200 bg-slate-50/50">
+                    <h2 className="text-sm font-semibold text-slate-700 uppercase tracking-wider">Top 20 Active High Value Accounts</h2>
                 </div>
-                <div className="overflow-x-auto">
-                    <table className="w-full text-sm text-left">
-                        <thead className="text-gray-500 font-medium border-b border-gray-200">
-                            <tr>
-                                <th className="px-6 py-3">Customer</th>
-                                <th className="px-6 py-3">Account ID</th>
-                                <th className="px-6 py-3">Type</th>
-                                <th className="px-6 py-3 text-right">Balance</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-200 text-gray-600">
+                <div className="relative w-full overflow-auto">
+                    <Table>
+                        <TableHeader className="bg-slate-50/50">
+                            <TableRow>
+                                <TableHead className="font-semibold text-slate-900">Customer</TableHead>
+                                <TableHead className="font-semibold text-slate-900">Account ID</TableHead>
+                                <TableHead className="font-semibold text-slate-900">Type</TableHead>
+                                <TableHead className="text-right font-semibold text-slate-900">Balance</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
                             {topAccounts.map((balance) => (
-                                <tr key={balance.account_id}>
-                                    <td className="px-6 py-4">
-                                        <div className="font-medium text-gray-900">{balance.account.customer.full_name}</div>
-                                        <div className="text-xs text-gray-500">{balance.account.customer.email}</div>
-                                    </td>
-                                    <td className="px-6 py-4 font-mono text-xs">{balance.account_id.slice(0, 8)}...</td>
-                                    <td className="px-6 py-4 capitalize">{balance.account.account_type}</td>
-                                    <td className="px-6 py-4 text-right font-mono font-medium text-gray-900">
+                                <TableRow key={balance.account_id}>
+                                    <TableCell>
+                                        <div className="font-medium text-slate-900">{balance.account.customer.full_name}</div>
+                                        <div className="text-xs text-slate-500">{balance.account.customer.email}</div>
+                                    </TableCell>
+                                    <TableCell className="font-mono text-xs text-slate-600">{balance.account_id.slice(0, 8)}...</TableCell>
+                                    <TableCell className="capitalize text-slate-600">{balance.account.account_type}</TableCell>
+                                    <TableCell className="text-right font-mono font-medium text-slate-900">
                                         {Number(balance.balance).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                    </td>
-                                </tr>
+                                    </TableCell>
+                                </TableRow>
                             ))}
                             {topAccounts.length === 0 && (
-                                <tr><td colSpan={4} className="px-6 py-8 text-center text-gray-500">No active high-value accounts found.</td></tr>
+                                <TableRow><TableCell colSpan={4} className="h-24 text-center text-slate-500">No active high-value accounts found.</TableCell></TableRow>
                             )}
-                        </tbody>
-                    </table>
+                        </TableBody>
+                    </Table>
                 </div>
-            </div>
+            </Card>
 
             {/* Inactive Accounts Registry */}
-            <div className="bg-white border border-gray-200">
-                <div className="px-6 py-4 border-b border-gray-200 bg-red-50">
-                    <h2 className="text-sm font-semibold text-red-800 uppercase">Frozen & Closed Accounts Registry</h2>
+            <Card>
+                <div className="px-6 py-4 border-b border-red-100 bg-red-50/50">
+                    <h2 className="text-sm font-semibold text-red-900 uppercase tracking-wider">Frozen & Closed Accounts Registry</h2>
                 </div>
-                <div className="overflow-x-auto">
-                    <table className="w-full text-sm text-left">
-                        <thead className="text-gray-500 font-medium border-b border-gray-200">
-                            <tr>
-                                <th className="px-6 py-3">Customer</th>
-                                <th className="px-6 py-3">Account ID</th>
-                                <th className="px-6 py-3">Status</th>
-                                <th className="px-6 py-3 text-right">Remaining Balance</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-200 text-gray-600">
+                <div className="relative w-full overflow-auto">
+                    <Table>
+                        <TableHeader className="bg-slate-50/50">
+                            <TableRow>
+                                <TableHead className="font-semibold text-slate-900">Customer</TableHead>
+                                <TableHead className="font-semibold text-slate-900">Account ID</TableHead>
+                                <TableHead className="font-semibold text-slate-900">Status</TableHead>
+                                <TableHead className="text-right font-semibold text-slate-900">Remaining Balance</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
                             {inactiveAccounts.map((account) => (
-                                <tr key={account.id}>
-                                    <td className="px-6 py-4">
-                                        <div className="font-medium text-gray-900">{account.customer.full_name}</div>
-                                    </td>
-                                    <td className="px-6 py-4 font-mono text-xs">{account.id.slice(0, 8)}...</td>
-                                    <td className="px-6 py-4">
-                                        <span className={`inline-flex px-2 py-0.5 text-xs font-semibold rounded-none ${account.status === "frozen" ? "bg-orange-100 text-orange-700" : "bg-red-100 text-red-700"}`}>
+                                <TableRow key={account.id}>
+                                    <TableCell>
+                                        <div className="font-medium text-slate-900">{account.customer.full_name}</div>
+                                    </TableCell>
+                                    <TableCell className="font-mono text-xs text-slate-600">{account.id.slice(0, 8)}...</TableCell>
+                                    <TableCell>
+                                        <span className={`inline-flex px-2 py-0.5 text-xs font-semibold rounded-md ${account.status === "frozen" ? "bg-amber-100 text-amber-700" : "bg-red-100 text-red-700"}`}>
                                             {account.status}
                                         </span>
-                                    </td>
-                                    <td className="px-6 py-4 text-right font-mono font-medium text-gray-900">
+                                    </TableCell>
+                                    <TableCell className="text-right font-mono font-medium text-slate-900">
                                         {Number(account.balance?.balance || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                    </td>
-                                </tr>
+                                    </TableCell>
+                                </TableRow>
                             ))}
                             {inactiveAccounts.length === 0 && (
-                                <tr><td colSpan={4} className="px-6 py-8 text-center text-gray-500">No inactive accounts found.</td></tr>
+                                <TableRow><TableCell colSpan={4} className="h-24 text-center text-slate-500">No inactive accounts found.</TableCell></TableRow>
                             )}
-                        </tbody>
-                    </table>
+                        </TableBody>
+                    </Table>
                 </div>
-            </div>
+            </Card>
         </div>
     );
 }

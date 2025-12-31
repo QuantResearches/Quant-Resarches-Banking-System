@@ -52,6 +52,7 @@ export async function POST(req: Request) {
             data: {
                 customer_id,
                 account_type,
+                account_number: `${account_type === 'internal' ? '10' : '20'}${Math.floor(100000000 + Math.random() * 900000000)}`, // 10 for Internal, 20 for Customer
                 created_by: session.user.id,
                 balance: {
                     create: {

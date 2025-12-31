@@ -25,8 +25,8 @@ export default async function AccountsPage() {
             <div className="flex justify-between items-center mb-6">
                 <h1 className="text-2xl font-semibold">Accounts</h1>
                 {canCreate && (
-                    <Link href="/accounts/create" className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 rounded-none transition-colors">
-                        <Plus className="w-4 h-4" />
+                    <Link href="/accounts/create" className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-slate-950 disabled:pointer-events-none disabled:opacity-50 bg-blue-600 text-white shadow hover:bg-blue-700 h-9 px-4 py-2">
+                        <Plus className="w-4 h-4 mr-2" />
                         New Account
                     </Link>
                 )}

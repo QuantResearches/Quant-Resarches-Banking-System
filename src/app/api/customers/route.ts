@@ -23,6 +23,8 @@ export async function GET(req: Request) {
     }
 }
 
+import { createHash } from "crypto";
+
 export async function POST(req: Request) {
     const session = await getServerSession(authOptions);
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -43,12 +45,30 @@ export async function POST(req: Request) {
             risk_category, pep_flag
         } = body;
 
+        // 1. Check for duplicate PAN or Aadhaar using Hashes
+        const panHash = createHash('sha256').update(pan.toUpperCase()).digest('hex');
+        const aadhaarHash = createHash('sha256').update(aadhaar_number).digest('hex');
+
+        const existingProfile = await prisma.customerProfile.findFirst({
+            where: {
+                OR: [
+                    { pan_hash: panHash },
+                    { aadhaar_hash: aadhaarHash }
+                ]
+            }
+        });
+
+        if (existingProfile) {
+            return NextResponse.json({ error: "Customer with this PAN or Aadhaar already exists." }, { status: 409 });
+        }
+
         // Transactional Creation
         const result = await prisma.$transaction(async (tx) => {
-            // 1. Create Customer Core Record
+            // 2. Create Customer Core Record
             const customer = await tx.customer.create({
                 data: {
                     full_name,
+                    cif_number: `80${Math.floor(100000000 + Math.random() * 900000000)}`, // 11 Digits (80 + 9 random)
                     email,
                     phone,
                     address, // This is current address summary
@@ -56,11 +76,11 @@ export async function POST(req: Request) {
                 }
             });
 
-            // 2. Encrypt Sensitive Data
-            const panEncrypted = encrypt(pan);
+            // 3. Encrypt Sensitive Data
+            const panEncrypted = encrypt(pan.toUpperCase());
             const aadhaarEncrypted = encrypt(aadhaar_number);
 
-            // 3. Create Detailed Profile
+            // 4. Create Detailed Profile
             await tx.customerProfile.create({
                 data: {
                     customer_id: customer.id,
@@ -70,17 +90,19 @@ export async function POST(req: Request) {
                     father_name,
                     country: nationality || "INDIAN",
                     current_address: address,
-                    permanent_address: address, // Default to same if not separated in UI yet, or add separate field
+                    permanent_address: address,
                     city,
                     state,
                     pincode,
                     pan_encrypted: panEncrypted,
+                    pan_hash: panHash,
                     aadhaar_number_encrypted: aadhaarEncrypted,
+                    aadhaar_hash: aadhaarHash,
                     kyc_status: "PENDING_VERIFICATION"
                 }
             });
 
-            // 4. Create Risk Profile
+            // 5. Create Risk Profile
             await tx.kYCRiskProfile.create({
                 data: {
                     profile_id: (await tx.customerProfile.findUnique({ where: { customer_id: customer.id } }))!.id,

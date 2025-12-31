@@ -1,0 +1,23 @@
+
+model BankLiability {
+  id              String   @id @default(uuid())
+  lender_name     String
+  reference_id    String?  // External Loan ID / Bond ID
+  
+  principal_amount Decimal @db.Decimal(15, 2)
+  interest_rate    Decimal @db.Decimal(5, 2) // Annual %
+  tenure_months    Int
+  
+  status          String   @default("ACTIVE") // ACTIVE, CLOSED, DEFAULTED
+  
+  disbursed_at    DateTime @default(now())
+  maturity_date   DateTime?
+  
+  created_by      String
+  created_at      DateTime @default(now())
+
+  // We could link this to an 'Internal Account' if we wanted full ledger tracking like Customer Loans
+  // For now, simpler tracking.
+  
+  @@map("bank_liabilities")
+}
