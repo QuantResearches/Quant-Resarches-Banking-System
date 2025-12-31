@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
 import { Button } from "@/components/ui/Button";
 import { Select } from "@/components/ui/Select";
+import { INDIAN_STATES } from "@/data/indian-states";
 
 export default function BankCustomerForm() {
     const router = useRouter();
@@ -131,7 +132,12 @@ export default function BankCustomerForm() {
                         </div>
                         <div className="space-y-2">
                             <Label>State <span className="text-red-500">*</span></Label>
-                            <Input name="state" required />
+                            <Select name="state" required>
+                                <option value="">Select State</option>
+                                {INDIAN_STATES.map((state) => (
+                                    <option key={state} value={state}>{state}</option>
+                                ))}
+                            </Select>
                         </div>
                         <div className="space-y-2">
                             <Label>Pincode <span className="text-red-500">*</span></Label>
